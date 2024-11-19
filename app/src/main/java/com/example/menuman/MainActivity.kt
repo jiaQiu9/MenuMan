@@ -9,12 +9,15 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.DragInteraction
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
@@ -84,25 +87,40 @@ class MainActivity : ComponentActivity() {
 fun MainScreen(){
     var randNum by remember{ mutableIntStateOf(0) }
     var numButtons = 10
-    Column(){
-//        Row(modifier=Modifier.background(Color.Blue)){
-//
-//        }
+    var changeLevel by remember{ mutableIntStateOf(0) }
+    Row(modifier=Modifier.fillMaxWidth()){
+        Column(modifier=Modifier.weight(2f)){
+            Row(){
+                //buttonChange(2, 3)
+                StartButton( onRand= { randNum = (1..numButtons).random() })
+            }
+            Spacer(modifier=Modifier.height(10.dp))
+            Row(){
+                //buttonChange(2, 2)
+            }
+            Spacer(modifier=Modifier.height(10.dp))
+            Row(){
+                LazyWithButtonRand(numButtons,randNum)
+            }
 
-        Row(){
-            //buttonChange(2, 3)
-            StartButton( onRand= { randNum = (1..numButtons).random() })
         }
-        Spacer(modifier=Modifier.height(10.dp))
-        Row(){
-            //buttonChange(2, 2)
-        }
-        Spacer(modifier=Modifier.height(10.dp))
-        Row(){
-            LazyWithButton(numButtons,randNum)
+
+
+
+        Column(modifier=Modifier.weight(2f)){
+            Row(){
+                StartButton(onRand={changeLevel=1})
+            }
+            Spacer(modifier=Modifier.height(10.dp))
+            Row(){
+                //LazyWithButtonRand(numButtons, changeLevel)
+                LazyButtonFixed(numButtons, changeLevel, ChangeLevel={changeLevel++})
+            }
         }
     }
+
 }
+
 
 @Composable
 fun StartButton(onRand: () -> Unit){
@@ -115,7 +133,7 @@ fun StartButton(onRand: () -> Unit){
 
 
 @Composable
-fun LazyWithButton(buttonsCount: Int, RandNum: Int){
+fun LazyWithButtonRand(buttonsCount: Int, RandNum: Int){
     val buttonData = List(buttonsCount){index->
         "Button ${index +1}"
     }
@@ -126,6 +144,20 @@ fun LazyWithButton(buttonsCount: Int, RandNum: Int){
         }
     }
 }
+
+@Composable
+fun LazyButtonFixed(buttonsCount: Int, Level:Int, ChangeLevel:()->Unit){
+    val buttonData = List(buttonsCount){index->
+        "Button ${index +1}"
+    }
+    LazyColumn(){
+        items(buttonData.size){ index->
+            val buttonId = index+1
+            buttonChangeLevelChange(buttonId, Level, ChangeLevel)
+        }
+    }
+}
+
 
 @Composable
 fun buttonChange(Level: Int, requiredLevel: Int){
@@ -140,6 +172,26 @@ fun buttonChange(Level: Int, requiredLevel: Int){
                Text("Win ${clicked}")
            }
            Icon(Icons.Filled.Check, contentDescription="checkMark", modifier= Modifier.align(Alignment.BottomEnd))
+        }
+    } else{
+        Button(onClick = {}) {
+            Text("Filled ${Level}")
+        }
+    }
+}
+
+@Composable
+fun buttonChangeLevelChange(Level: Int, requiredLevel:Int, onFind:()->Unit){
+    if(Level == requiredLevel){
+        Box{
+            Button(onClick = {onFind()},
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.Magenta, // Background color
+                    contentColor = Color.White
+                ) ){
+                Text("Win")
+            }
+            Icon(Icons.Filled.Check, contentDescription="checkMark", modifier= Modifier.align(Alignment.BottomEnd))
         }
     } else{
         Button(onClick = {}) {

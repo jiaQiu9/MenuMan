@@ -88,6 +88,9 @@ fun MainScreen(){
     var randNum by remember{ mutableIntStateOf(0) }
     var numButtons = 10
     var changeLevel by remember{ mutableIntStateOf(0) }
+    if (changeLevel <=10){
+
+
     Row(modifier=Modifier.fillMaxWidth()){
         Column(modifier=Modifier.weight(2f)){
             Row(){
@@ -113,9 +116,27 @@ fun MainScreen(){
             }
             Spacer(modifier=Modifier.height(10.dp))
             Row(){
+                Text("change level ${changeLevel}")
+            }
+            Spacer(modifier=Modifier.height(10.dp))
+            Row(){
                 //LazyWithButtonRand(numButtons, changeLevel)
+
                 LazyButtonFixed(numButtons, changeLevel, ChangeLevel={changeLevel++})
             }
+        }
+    }} else{
+        Column(modifier=Modifier.fillMaxSize()){
+            Row(){
+                Text("Win, replace with a quotes from ZenQuotes")
+            }
+            Spacer(modifier=Modifier.height(10.dp))
+            Row(){
+                Button(onClick = {changeLevel=0}){
+                    Text("Next Round?")
+                }
+            }
+
         }
     }
 

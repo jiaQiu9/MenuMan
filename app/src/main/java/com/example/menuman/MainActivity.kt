@@ -88,8 +88,8 @@ fun MainScreen(){
     var randNum by remember{ mutableIntStateOf(0) }
     var numButtons = 10
     var changeLevel by remember{ mutableIntStateOf(0) }
+    var currentRound by remember{ mutableIntStateOf(0) }
     if (changeLevel <=10){
-
 
     Row(modifier=Modifier.fillMaxWidth()){
         Column(modifier=Modifier.weight(2f)){
@@ -117,7 +117,14 @@ fun MainScreen(){
             Spacer(modifier=Modifier.height(10.dp))
             Row(){
                 Text("change level ${changeLevel}")
+
+
             }
+            Spacer(modifier=Modifier.height(10.dp))
+            Row(){
+                Text("Current round ${currentRound}")
+            }
+
             Spacer(modifier=Modifier.height(10.dp))
             Row(){
                 //LazyWithButtonRand(numButtons, changeLevel)
@@ -132,7 +139,7 @@ fun MainScreen(){
             }
             Spacer(modifier=Modifier.height(10.dp))
             Row(){
-                Button(onClick = {changeLevel=0}){
+                Button(onClick = {changeLevel=0; currentRound++}){
                     Text("Next Round?")
                 }
             }

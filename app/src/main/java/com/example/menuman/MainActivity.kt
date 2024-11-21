@@ -5,8 +5,10 @@ import androidx.compose.material3.Button
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.core.animateIntOffsetAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.DragInteraction
@@ -19,6 +21,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -55,9 +58,11 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -150,18 +155,42 @@ fun MainScreen(){
 //        }
 
         Column(modifier=Modifier.weight(1f).border(BorderStroke(2.dp, SolidColor(Color.Red))).fillMaxHeight()){
-            Row(){
-                StartButton(onRand={changeLevel=1})
+            var clicked by remember { mutableStateOf(false)}
+            val offset by animateIntOffsetAsState(
+                targetValue = if (clicked) {
+                    IntOffset(200,205)
+                } else {
+                    IntOffset(100,60)
+                }, label = "Offset Animation"
+            )
+            Box {
+                StartButton(onClick = {
+                    changeLevel = 1
+                    clicked = !clicked
+                })
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp)
+                        .border(BorderStroke(2.dp, Color.Red))
+                        .offset { offset },
+                    contentAlignment = Alignment.TopStart // Allow free positioning
+                ) {
+                    IconFromDrawable(
+                    )
+                }
             }
+
+
             Spacer(modifier=Modifier.height(10.dp))
             Row(){
-                Text("change level ${changeLevel}")
+                Text("change level $changeLevel")
 
 
             }
             Spacer(modifier=Modifier.height(10.dp))
             Row(){
-                Text("Current round ${currentRound}")
+                Text("Current round $currentRound")
             }
 
             Spacer(modifier=Modifier.height(10.dp))
@@ -188,9 +217,30 @@ fun MainScreen(){
 
 }
 
+@Composable
+fun IconFromDrawable(modifier: Modifier = Modifier) {
+    Image(
+        painter = painterResource(id = R.drawable.menumantest),
+        contentDescription = "Custom Icon",
+        modifier = Modifier.size(20.dp),
+    )
+}
 
 @Composable
-fun StartButton(onRand: () -> Unit){
+fun StartButton(onClick: () -> Unit) {
+    Button(
+        onClick = onClick, // Pass the onClick lambda to the Button
+        colors = ButtonDefaults.buttonColors(
+            containerColor = Color.Blue, // Customize as needed
+            contentColor = Color.White
+        )
+    ) {
+        Text(text = "Start Game")
+    }
+}
+
+@Composable
+fun StartButtonT(onRand: () -> Unit){
     Button(onClick = {
         onRand()
     }){
@@ -228,21 +278,24 @@ fun LazyButtonFixed(buttonsCount: Int, Level:Int, ChangeLevel:()->Unit){
 
 @Composable
 fun buttonChange(Level: Int, requiredLevel: Int){
-    var clicked by remember{ mutableIntStateOf(0) }
+    var clicked by remember { mutableStateOf(false)}
+
     if(Level == requiredLevel){
         Box{
-           Button(onClick = {clicked++},
+           Button(onClick = {clicked=!clicked},
                colors = ButtonDefaults.buttonColors(
                containerColor = Color.Magenta, // Background color
                contentColor = Color.White
            ) ){
-               Text("Win ${clicked}")
+               Text("Win $clicked")
            }
-           Icon(Icons.Filled.Check, contentDescription="checkMark", modifier= Modifier.align(Alignment.BottomEnd))
+           Icon(
+               Icons.Filled.Check, contentDescription="checkMark", modifier= Modifier
+                   .align(Alignment.BottomEnd))
         }
     } else{
         Button(onClick = {}) {
-            Text("Filled ${Level}")
+            Text("Filled $Level")
         }
     }
 }

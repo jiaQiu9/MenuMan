@@ -1,7 +1,8 @@
 package com.example.menuman
 
+import android.annotation.SuppressLint
 import android.os.Bundle
-import androidx.compose.material3.Button
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -11,47 +12,17 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.interaction.DragInteraction
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material3.ButtonColors
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CenterAlignedTopAppBar
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PointMode
 import androidx.compose.ui.graphics.SolidColor
@@ -60,161 +31,325 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.menuman.ui.theme.MenuManTheme
+import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.delay
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
+import com.google.firebase.FirebaseApp
 
-class MainActivity : ComponentActivity() {
-    @OptIn(ExperimentalMaterial3Api::class)
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        setContent {
-            MenuManTheme {
-                Scaffold(
-                    topBar = {
-                        CenterAlignedTopAppBar(
+object AppColors {
+    val Primary = Color(0xFF1E88E5)
+    val Secondary = Color(0xFFF4511E)
+    val Background = Color(0xFFF5F5F5)
+    val TextPrimary = Color.Black
+    val TextSecondary = Color.DarkGray
+    val ButtonBackground = Color(0xFF1976D2)
+    val ButtonText = Color.White
+}
 
-                            colors = TopAppBarDefaults.topAppBarColors(
-                                containerColor =Color.Gray,
-                                titleContentColor = Color.Black,
-                            ),
-                            title = {
-                                Text("MenuMen")
-                            }
-                        )
-                    },
-                    modifier = Modifier.fillMaxSize()
-                ) { innerPadding ->
-//                    Greeting(
-//                        name = "Android",
-//                        modifier = Modifier.padding(innerPadding)
-//                    )
-                    Column(
-                        modifier=Modifier.padding(innerPadding)
-                    ){
 
-                        Row(){
-                            MainScreen()
+@Composable
+fun SignupScreen(
+    onSignupSuccess: () -> Unit,
+    signUpUser: (String, String, (String) -> Unit) -> Unit
+) {
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var isLoading by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf("") }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        TextField(
+            value = email,
+            onValueChange = { email = it },
+            label = { Text("Email") },
+            modifier = Modifier.fillMaxWidth()
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+
+        TextField(
+            value = password,
+            onValueChange = { password = it },
+            label = { Text("Password") },
+            visualTransformation = PasswordVisualTransformation(),
+            modifier = Modifier.fillMaxWidth()
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Button(
+            onClick = {
+                if (email.isBlank() || password.isBlank()) {
+                    errorMessage = "Email and Password cannot be empty"
+                } else {
+                    isLoading = true
+                    errorMessage = ""
+                    signUpUser(email, password) { error ->
+                        if (error.isEmpty()) {
+                            onSignupSuccess()
+                        } else {
+                            errorMessage = error
                         }
-//                        Row(){
-//                            Box(
-//                                contentAlignment = Alignment.Center
-//                            ) {
-//                                // call the function Timer
-//                                // and pass the values
-//                                // it is defined below.
-//                                Timer(
-//                                    totalTime = 10L * 1000L,
-//                                    handleColor = Color.Green,
-//                                    inactiveBarColor = Color.DarkGray,
-//                                    activeBarColor = Color(0xFF37B900),
-//                                    modifier = Modifier.size(100.dp)
-//                                )
-//                            }
-//                        }
+                        isLoading = false
                     }
-
-
                 }
-            }
+            },
+            modifier = Modifier.fillMaxWidth(),
+            enabled = !isLoading
+        ) {
+            Text(if (isLoading) "Signing up..." else "Sign Up")
+        }
+
+        if (errorMessage.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(text = errorMessage, color = MaterialTheme.colorScheme.error)
         }
     }
 }
+
 @Composable
-fun MainScreen(){
-    var randNum by remember{ mutableIntStateOf(0) }
-    var numButtons = 10
-    var changeLevel by remember{ mutableIntStateOf(0) }
-    var currentRound by remember{ mutableIntStateOf(0) }
-    if (changeLevel <=10){
+fun LoginScreen(
+    onLoginSuccess: () -> Unit,
+    loginUser: (String, String, (String) -> Unit) -> Unit
+) {
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var isLoading by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf("") }
 
-    Row(modifier=Modifier.fillMaxWidth()){
-//        Column(modifier=Modifier.weight(2f)){
-//            Row(){
-//                //buttonChange(2, 3)
-//                StartButton( onRand= { randNum = (1..numButtons).random() })
-//            }
-//            Spacer(modifier=Modifier.height(10.dp))
-//            Row(){
-//                //buttonChange(2, 2)
-//            }
-//            Spacer(modifier=Modifier.height(10.dp))
-//            Row(){
-//                LazyWithButtonRand(numButtons,randNum)
-//            }
-//
-//        }
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        TextField(
+            value = email,
+            onValueChange = { email = it },
+            label = { Text("Email") },
+            modifier = Modifier.fillMaxWidth()
+        )
+        Spacer(modifier = Modifier.height(8.dp))
 
-        Column(modifier=Modifier.weight(1f).border(BorderStroke(2.dp, SolidColor(Color.Red))).fillMaxHeight()){
-            var clicked by remember { mutableStateOf(false)}
-            val offset by animateIntOffsetAsState(
-                targetValue = if (clicked) {
-                    IntOffset(200,205)
+        TextField(
+            value = password,
+            onValueChange = { password = it },
+            label = { Text("Password") },
+            visualTransformation = PasswordVisualTransformation(),
+            modifier = Modifier.fillMaxWidth()
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Button(
+            onClick = {
+                if (email.isBlank() || password.isBlank()) {
+                    errorMessage = "Email and Password cannot be empty"
                 } else {
-                    IntOffset(100,60)
-                }, label = "Offset Animation"
-            )
-            Box {
-                StartButton(onClick = {
-                    changeLevel = 1
-                    clicked = !clicked
-                })
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(200.dp)
-                        .border(BorderStroke(2.dp, Color.Red))
-                        .offset { offset },
-                    contentAlignment = Alignment.TopStart // Allow free positioning
-                ) {
-                    IconFromDrawable(
-                    )
+                    isLoading = true
+                    errorMessage = ""
+                    loginUser(email, password) { error ->
+                        if (error.isEmpty()) {
+                            onLoginSuccess()
+                        } else {
+                            errorMessage = error
+                        }
+                        isLoading = false
+                    }
                 }
-            }
-
-
-            Spacer(modifier=Modifier.height(10.dp))
-            Row(){
-                Text("change level $changeLevel")
-
-
-            }
-            Spacer(modifier=Modifier.height(10.dp))
-            Row(){
-                Text("Current round $currentRound")
-            }
-
-            Spacer(modifier=Modifier.height(10.dp))
-            Row(){
-                //LazyWithButtonRand(numButtons, changeLevel)
-
-                LazyButtonFixed(numButtons, changeLevel, ChangeLevel={changeLevel++})
-            }
+            },
+            modifier = Modifier.fillMaxWidth(),
+            enabled = !isLoading
+        ) {
+            Text(if (isLoading) "Logging in..." else "Login")
         }
-    }} else{
-        Column(modifier=Modifier.fillMaxSize()){
-            Row(){
-                Text("Win, replace with a quotes from ZenQuotes")
-            }
-            Spacer(modifier=Modifier.height(10.dp))
-            Row(){
-                Button(onClick = {changeLevel=0; currentRound++}){
-                    Text("Next Round?")
-                }
-            }
 
+        if (errorMessage.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(text = errorMessage, color = MaterialTheme.colorScheme.error)
+        }
+    }
+}
+
+
+class MainActivity : ComponentActivity() {
+    private lateinit var auth: FirebaseAuth
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        // Initialize Firebase
+        FirebaseApp.initializeApp(this)
+        auth = FirebaseAuth.getInstance()
+
+        setContent {
+            MenuManTheme {
+                MainScreen(
+                    signUpUser = { email, password, callback ->
+                        signUpWithEmail(email, password, callback)
+                    },
+                    loginUser = { email, password, callback ->
+                        loginWithEmail(email, password, callback)
+                    }
+                )
+            }
         }
     }
 
+    private fun signUpWithEmail(email: String, password: String, callback: (String) -> Unit) {
+        auth.createUserWithEmailAndPassword(email, password)
+            .addOnCompleteListener(this) { task ->
+                if (task.isSuccessful) {
+                    callback("")
+                } else {
+                    callback(task.exception?.localizedMessage ?: "Signup failed")
+                }
+            }
+    }
+
+    private fun loginWithEmail(email: String, password: String, callback: (String) -> Unit) {
+        auth.signInWithEmailAndPassword(email, password)
+            .addOnCompleteListener(this) { task ->
+                if (task.isSuccessful) {
+                    callback("")
+                } else {
+                    callback(task.exception?.localizedMessage ?: "Login failed")
+                }
+            }
+    }
+}
+
+
+@Composable
+fun MainScreen(
+    signUpUser: (String, String, (String) -> Unit) -> Unit,
+    loginUser: (String, String, (String) -> Unit) -> Unit
+) {
+    var currentScreen by remember { mutableStateOf("home") }
+
+    when (currentScreen) {
+        "home" -> {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Button(onClick = { currentScreen = "login" }) {
+                    Text("Login")
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+                Button(onClick = { currentScreen = "signup" }) {
+                    Text("Sign Up")
+                }
+            }
+        }
+
+        "login" -> {
+            LoginScreen(
+                onLoginSuccess = { currentScreen = "game" },
+                loginUser = loginUser
+            )
+        }
+
+        "signup" -> {
+            SignupScreen(
+                onSignupSuccess = { currentScreen = "login" },
+                signUpUser = signUpUser
+            )
+        }
+
+        "game" -> {
+            Text("Game Screen")
+        }
+    }
+}
+
+@Composable
+fun GameScreen() {
+    var randNum by remember { mutableIntStateOf(0) }
+    var numButtons = 10
+    var changeLevel by remember { mutableIntStateOf(0) }
+    var currentRound by remember { mutableIntStateOf(0) }
+
+    if (changeLevel <= 10) {
+        Row(modifier = Modifier.fillMaxWidth()) {
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .border(BorderStroke(2.dp, SolidColor(AppColors.Secondary)))
+                    .fillMaxHeight()
+            ) {
+                var clicked by remember { mutableStateOf(false) }
+                val offset by animateIntOffsetAsState(
+                    targetValue = if (clicked) IntOffset(200, 205) else IntOffset(100, 60),
+                    label = "Offset Animation"
+                )
+
+                Box {
+                    StartButton(onClick = {
+                        changeLevel = 1
+                        clicked = !clicked
+                    })
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(200.dp)
+                            .border(BorderStroke(2.dp, AppColors.Secondary))
+                            .offset { offset },
+                        contentAlignment = Alignment.TopStart
+                    ) {
+                        IconFromDrawable()
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+                Row {
+                    Text("Change level $changeLevel", color = AppColors.TextSecondary)
+                }
+                Spacer(modifier = Modifier.height(10.dp))
+                Row {
+                    Text("Current round $currentRound", color = AppColors.TextSecondary)
+                }
+                Spacer(modifier = Modifier.height(10.dp))
+                Row {
+                    LazyButtonFixed(numButtons, changeLevel, ChangeLevel = { changeLevel++ })
+                }
+            }
+        }
+    } else {
+        Column(modifier = Modifier.fillMaxSize()) {
+            Row {
+                Text("Win, replace with a quote from ZenQuotes", color = AppColors.TextPrimary)
+            }
+            Spacer(modifier = Modifier.height(10.dp))
+            Row {
+                Button(
+                    onClick = {
+                        changeLevel = 0
+                        currentRound++
+                    },
+                    colors = ButtonDefaults.buttonColors(AppColors.ButtonBackground)
+                ) {
+                    Text("Next Round?", color = AppColors.ButtonText)
+                }
+            }
+        }
+    }
 }
 
 @Composable
@@ -370,7 +505,7 @@ fun Timer(
 
     // set initial value to 1
     initialValue: Float = 1f,
-    strokeWidth: Dp=5.dp
+    strokeWidth: Dp =5.dp
 ) {
     // create variable for
     // size of the composable

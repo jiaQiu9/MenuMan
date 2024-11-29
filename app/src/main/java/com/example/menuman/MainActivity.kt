@@ -45,6 +45,15 @@ import kotlin.math.cos
 import kotlin.math.sin
 import com.google.firebase.FirebaseApp
 
+//import android.os.Bundle
+import android.widget.TextView
+import androidx.activity.viewModels
+import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.runtime.livedata.observeAsState
+
+import androidx.compose.ui.text.font.FontStyle
+
+
 object AppColors {
     val Primary = Color(0xFF1E88E5)
     val Secondary = Color(0xFFF4511E)
@@ -187,6 +196,7 @@ fun LoginScreen(
 
 class MainActivity : ComponentActivity() {
     private lateinit var auth: FirebaseAuth
+    private val quoteViewModel: QuoteViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -203,7 +213,8 @@ class MainActivity : ComponentActivity() {
                     },
                     loginUser = { email, password, callback ->
                         loginWithEmail(email, password, callback)
-                    }
+                    },
+                    quoteViewModel
                 )
             }
         }
@@ -236,7 +247,8 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun MainScreen(
     signUpUser: (String, String, (String) -> Unit) -> Unit,
-    loginUser: (String, String, (String) -> Unit) -> Unit
+    loginUser: (String, String, (String) -> Unit) -> Unit,
+    quoteViewModel: QuoteViewModel
 ) {
     var currentScreen by remember { mutableStateOf("home") }
 
@@ -274,17 +286,27 @@ fun MainScreen(
         }
 
         "game" -> {
-            Text("Game Screen")
+            //Text("Game Screen")
+            GameScreen(quoteViewModel)
         }
     }
 }
 
 @Composable
-fun GameScreen() {
+fun GameScreen(quoteViewModel: QuoteViewModel) {
     var randNum by remember { mutableIntStateOf(0) }
     var numButtons = 10
     var changeLevel by remember { mutableIntStateOf(0) }
     var currentRound by remember { mutableIntStateOf(0) }
+
+    // Fetch the quote only when changeLevel > 10
+    if (changeLevel > 10) {
+        LaunchedEffect(changeLevel) {
+            quoteViewModel.fetchRandomQuote()  // Fetch a new quote when the condition is met
+        }
+    }
+
+    val quote = quoteViewModel.quote.value // Get the latest quote value
 
     if (changeLevel <= 10) {
         Row(modifier = Modifier.fillMaxWidth()) {
@@ -334,7 +356,11 @@ fun GameScreen() {
     } else {
         Column(modifier = Modifier.fillMaxSize()) {
             Row {
-                Text("Win, replace with a quote from ZenQuotes", color = AppColors.TextPrimary)
+//                Text("Win, replace with a quote from ZenQuotes", color = AppColors.TextPrimary)
+                Text(
+                    text = quote,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
             }
             Spacer(modifier = Modifier.height(10.dp))
             Row {

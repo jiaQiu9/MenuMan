@@ -352,6 +352,7 @@ fun GameScreen(quoteViewModel: QuoteViewModel) {
                         }
                     }
                 }
+
                 if (isLandscape) {
                     Spacer(modifier = Modifier.height(16.dp))
                     Box {

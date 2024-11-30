@@ -1,6 +1,7 @@
 package com.example.menuman
 
 import android.annotation.SuppressLint
+import android.content.res.Configuration
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -50,6 +51,8 @@ import android.widget.TextView
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.platform.LocalConfiguration
 
 import androidx.compose.ui.text.font.FontStyle
 
@@ -134,10 +137,10 @@ fun LoginScreen(
     onLoginSuccess: () -> Unit,
     loginUser: (String, String, (String) -> Unit) -> Unit
 ) {
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var isLoading by remember { mutableStateOf(false) }
-    var errorMessage by remember { mutableStateOf("") }
+    var email by rememberSaveable { mutableStateOf("") }
+    var password by rememberSaveable { mutableStateOf("") }
+    var isLoading by rememberSaveable { mutableStateOf(false) }
+    var errorMessage by rememberSaveable { mutableStateOf("") }
 
     Column(
         modifier = Modifier
@@ -250,7 +253,7 @@ fun MainScreen(
     loginUser: (String, String, (String) -> Unit) -> Unit,
     quoteViewModel: QuoteViewModel
 ) {
-    var currentScreen by remember { mutableStateOf("home") }
+    var currentScreen by rememberSaveable { mutableStateOf("home") }
 
     when (currentScreen) {
         "home" -> {
@@ -294,10 +297,13 @@ fun MainScreen(
 
 @Composable
 fun GameScreen(quoteViewModel: QuoteViewModel) {
-    var randNum by remember { mutableIntStateOf(0) }
-    var numButtons = 10
-    var changeLevel by remember { mutableIntStateOf(0) }
-    var currentRound by remember { mutableIntStateOf(0) }
+    var randNum by rememberSaveable { mutableIntStateOf(0) }
+    val numButtons = 10
+    var changeLevel by rememberSaveable { mutableIntStateOf(0) }
+    var currentRound by rememberSaveable { mutableIntStateOf(0) }
+    val configuration = LocalConfiguration.current
+    val orientation = configuration.orientation
+    val isLandscape = orientation == Configuration.ORIENTATION_LANDSCAPE
 
     // Fetch the quote only when changeLevel > 10
     if (changeLevel > 10) {
@@ -318,13 +324,16 @@ fun GameScreen(quoteViewModel: QuoteViewModel) {
             ) {
                 var clicked by remember { mutableStateOf(false) }
                 val offset by animateIntOffsetAsState(
-                    targetValue = if (clicked) IntOffset(200, 205) else IntOffset(100, 60),
+                    targetValue = if (clicked) IntOffset(4000, 0) else IntOffset(100, 60),
                     label = "Offset Animation"
                 )
 
                 Box {
                     StartButton(onClick = {
                         changeLevel = 1
+                        if (currentRound == 0) {
+                            currentRound = 1
+                        }
                         clicked = !clicked
                     })
                     Box(
@@ -335,7 +344,31 @@ fun GameScreen(quoteViewModel: QuoteViewModel) {
                             .offset { offset },
                         contentAlignment = Alignment.TopStart
                     ) {
-                        IconFromDrawable()
+                        if (currentRound == 0) {
+                            Image(
+                                painter = painterResource(id = R.drawable.menumantest),
+                                contentDescription = null,
+                            )
+                        }
+                    }
+                }
+                if (isLandscape) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Box {
+                        Button(onClick = {
+                            if (currentRound == 1) {
+                                currentRound = 2
+                            }
+                        }) {
+                            Text("Hi there")
+                        }
+                        if (currentRound == 1) {
+                            Image(
+                                painter = painterResource(id = R.drawable.menumantest),
+                                contentDescription = null,
+                                modifier = Modifier.matchParentSize()
+                            )
+                        }
                     }
                 }
 
@@ -399,16 +432,6 @@ fun StartButton(onClick: () -> Unit) {
         Text(text = "Start Game")
     }
 }
-
-@Composable
-fun StartButtonT(onRand: () -> Unit){
-    Button(onClick = {
-        onRand()
-    }){
-        Text("Start Game")
-    }
-}
-
 
 @Composable
 fun LazyWithButtonRand(buttonsCount: Int, RandNum: Int){

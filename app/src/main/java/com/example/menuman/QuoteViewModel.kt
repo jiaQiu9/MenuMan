@@ -20,7 +20,7 @@ class QuoteViewModel : ViewModel(){
 
                 if (response.isNotEmpty()) {
                     val fetchedQuote = response[0]
-                    _quote.value = "Quote: \"${fetchedQuote.quote}\"\nAuthor: ${fetchedQuote.author}"
+                    _quote.value = "Quote: \"${fetchedQuote.quote}\"\nAuthor: ${fetchedQuote.author}\nCategory: ${fetchedQuote.category}"
                 } else {
                     _quote.value = "No quote found"
                 }

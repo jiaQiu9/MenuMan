@@ -52,7 +52,12 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color.Companion.Blue
+import androidx.compose.ui.graphics.Color.Companion.Cyan
+import androidx.compose.ui.graphics.Color.Companion.Magenta
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.text.TextStyle
 
 import androidx.compose.ui.text.font.FontStyle
 
@@ -200,6 +205,7 @@ fun LoginScreen(
 class MainActivity : ComponentActivity() {
     private lateinit var auth: FirebaseAuth
     private val quoteViewModel: QuoteViewModel by viewModels()
+    private val recipeViewModel: RecipeViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -210,15 +216,17 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             MenuManTheme {
-                MainScreen(
-                    signUpUser = { email, password, callback ->
-                        signUpWithEmail(email, password, callback)
-                    },
-                    loginUser = { email, password, callback ->
-                        loginWithEmail(email, password, callback)
-                    },
-                    quoteViewModel
-                )
+//                MainScreen(
+//                    signUpUser = { email, password, callback ->
+//                        signUpWithEmail(email, password, callback)
+//                    },
+//                    loginUser = { email, password, callback ->
+//                        loginWithEmail(email, password, callback)
+//                    },
+//                    quoteViewModel
+//                )
+                 // GameScreen(quoteViewModel)
+                RecipeScreen(recipeViewModel)
             }
         }
     }
@@ -293,6 +301,13 @@ fun MainScreen(
             GameScreen(quoteViewModel)
         }
     }
+}
+
+@Composable
+fun RecipeScreen(recipeViewModel: RecipeViewModel){
+    recipeViewModel.getRandomRecipe()
+    val recipe = recipeViewModel.recipe.value
+    Text(recipe)
 }
 
 @Composable
@@ -389,11 +404,18 @@ fun GameScreen(quoteViewModel: QuoteViewModel) {
         }
     } else {
         Column(modifier = Modifier.fillMaxSize()) {
+            val gradientColors = listOf(Color(0xFF15f4ee), Blue, Magenta /*...*/)
             Row {
 //                Text("Win, replace with a quote from ZenQuotes", color = AppColors.TextPrimary)
                 Text(
                     text = quote,
-                    modifier = Modifier.padding(bottom = 8.dp)
+                    modifier = Modifier.padding(bottom = 8.dp),
+                    fontWeight = FontWeight.Bold,
+                    style = TextStyle(
+                        brush = Brush.linearGradient(
+                            colors = gradientColors
+                        )
+                    )
                 )
             }
             Spacer(modifier = Modifier.height(10.dp))

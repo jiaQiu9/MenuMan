@@ -50,6 +50,9 @@ import com.google.firebase.FirebaseApp
 import android.widget.TextView
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.graphics.Brush
@@ -214,6 +217,7 @@ class MainActivity : ComponentActivity() {
         FirebaseApp.initializeApp(this)
         auth = FirebaseAuth.getInstance()
 
+
         setContent {
             MenuManTheme {
 //                MainScreen(
@@ -312,13 +316,14 @@ fun RecipeScreen(recipeViewModel: RecipeViewModel){
 
 @Composable
 fun GameScreen(quoteViewModel: QuoteViewModel) {
-    var randNum by rememberSaveable { mutableIntStateOf(0) }
-    val numButtons = 10
     var changeLevel by rememberSaveable { mutableIntStateOf(0) }
     var currentRound by rememberSaveable { mutableIntStateOf(0) }
     val configuration = LocalConfiguration.current
     val orientation = configuration.orientation
     val isLandscape = orientation == Configuration.ORIENTATION_LANDSCAPE
+    val screenWidth = configuration.screenWidthDp.dp
+    val screenHeight = configuration.screenHeightDp.dp
+
 
     // Fetch the quote only when changeLevel > 10
     if (changeLevel > 10) {
@@ -339,7 +344,11 @@ fun GameScreen(quoteViewModel: QuoteViewModel) {
             ) {
                 var clicked by remember { mutableStateOf(false) }
                 val offset by animateIntOffsetAsState(
-                    targetValue = if (clicked) IntOffset(4000, 0) else IntOffset(100, 60),
+                    targetValue = if (clicked) IntOffset(4000, 0) else IntOffset(0, 0),
+                    animationSpec = tween(
+                        durationMillis = 2000,
+                        easing = LinearEasing
+                    ),
                     label = "Offset Animation"
                 )
 
@@ -370,13 +379,13 @@ fun GameScreen(quoteViewModel: QuoteViewModel) {
 
                 if (isLandscape) {
                     Spacer(modifier = Modifier.height(16.dp))
-                    Box {
+                    Box(modifier = Modifier.offset { offset }) {
                         Button(onClick = {
                             if (currentRound == 1) {
                                 currentRound = 2
                             }
                         }) {
-                            Text("Hi there")
+                            Text("Round 1")
                         }
                         if (currentRound == 1) {
                             Image(
@@ -397,8 +406,218 @@ fun GameScreen(quoteViewModel: QuoteViewModel) {
                     Text("Current round $currentRound", color = AppColors.TextSecondary)
                 }
                 Spacer(modifier = Modifier.height(10.dp))
-                Row {
-                    LazyButtonFixed(numButtons, changeLevel, ChangeLevel = { changeLevel++ })
+                LazyRow(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                ) {
+                    item {
+                        LazyColumn(
+                            modifier = Modifier
+                                .fillMaxHeight()
+                                .fillMaxWidth(0.66F),
+                            verticalArrangement = Arrangement.spacedBy(8.dp), // Optional spacing between buttons
+                            contentPadding = PaddingValues(16.dp) // Optional padding for the list
+                        ) {
+                            item {
+                                Button(
+                                    onClick = { /* Handle click for Button 1 */ },
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text("Button 1")
+                                }
+                            }
+                            item {
+                                Button(
+                                    onClick = { /* Handle click for Button 1 */ },
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text("Button 2")
+                                }
+                            }
+                            item {
+                                Button(
+                                    onClick = { /* Handle click for Button 1 */ },
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text("Button 2")
+                                }
+                            }
+                            item {
+                                Button(
+                                    onClick = { /* Handle click for Button 1 */ },
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text("Button 2")
+                                }
+                            }
+                            item {
+                                Button(
+                                    onClick = { /* Handle click for Button 1 */ },
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text("Button 2")
+                                }
+                            }
+                            item {
+                                Button(
+                                    onClick = { /* Handle click for Button 1 */ },
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text("Button 3")
+                                }
+                            }
+                            item {
+                                Button(
+                                    onClick = { /* Handle click for Button 1 */ },
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text("Button 9")
+                                }
+                            }
+                            item {
+                                Button(
+                                    onClick = { /* Handle click for Button 1 */ },
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text("Button 12")
+                                }
+                            }
+                            item {
+                                Button(
+                                    onClick = { /* Handle click for Button 1 */ },
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text("Button 12")
+                                }
+                            }
+                            item {
+                                Button(
+                                    onClick = { /* Handle click for Button 1 */ },
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text("Button 12")
+                                }
+                            }
+                            item {
+                                Button(
+                                    onClick = { /* Handle click for Button 1 */ },
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text("Button 12")
+                                }
+                            }
+                            item {
+                                Button(
+                                    onClick = { /* Handle click for Button 1 */ },
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text("Button 12")
+                                }
+                            }
+                            item {
+                                Box(modifier = Modifier.offset { offset }) {
+                                    Button(onClick = {
+                                        if (currentRound == 2) {
+                                            currentRound = 3
+                                        }
+                                    }, modifier = Modifier.fillMaxWidth()) {
+                                        Text("Round 2")
+                                    }
+                                    if (currentRound == 2) {
+                                        Image(
+                                            painter = painterResource(id = R.drawable.menumantest),
+                                            contentDescription = null,
+                                            modifier = Modifier.matchParentSize()
+                                        )
+                                    }
+                                }
+                            }
+                            item {
+                                Button(
+                                    onClick = { /* Handle click for Button 1 */ },
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text("Button 5")
+                                }
+                            }
+                        }
+                    }
+                    item {
+                        Button(
+                            onClick = {},
+                            modifier = Modifier.padding(end = 8.dp)
+                        ) {
+                            Text("Button 1")
+                        }
+                    }
+                    item {
+                        Button(
+                            onClick = {},
+                            modifier = Modifier.padding(end = 8.dp)
+                        ) {
+                            Text("Button 2")
+                        }
+                    }
+                    item {
+                        LazyRow(
+                            modifier = Modifier
+                                .width(200.dp) // Set explicit width for the inner LazyRow
+                                .height(120.dp) // Set explicit height for the inner LazyRow
+                                .border(2.dp, Color.Blue) // Add a blue border
+                                .padding(8.dp) // Add padding inside the border
+                        ) {
+                            item {
+                                Button(
+                                    onClick = {},
+                                    modifier = Modifier.padding(end = 8.dp)
+                                ) {
+                                    Text("Button 2")
+                                }
+                            }
+                            item {
+                                Button(
+                                    onClick = {},
+                                    modifier = Modifier.padding(end = 8.dp)
+                                ) {
+                                    Text("Button 2")
+                                }
+                            }
+                            item {
+                                Button(
+                                    onClick = {},
+                                    modifier = Modifier.padding(end = 8.dp)
+                                ) {
+                                    Text("Button 2")
+                                }
+                            }
+                            item {
+                                Button(
+                                    onClick = {},
+                                    modifier = Modifier.padding(end = 8.dp)
+                                ) {
+                                    Text("Button 2")
+                                }
+                            }
+                            item {
+                                Box(modifier = Modifier.offset { offset }) {
+                                    Button(onClick = {
+                                        if (currentRound == 3) {
+                                            currentRound = 4
+                                        }
+                                    }) {
+                                        Text("Round 3")
+                                    }
+                                    if (currentRound == 3) {
+                                        Image(
+                                            painter = painterResource(id = R.drawable.menumantest),
+                                            contentDescription = null
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -452,7 +671,7 @@ fun StartButton(onClick: () -> Unit) {
             contentColor = Color.White
         )
     ) {
-        Text(text = "Start Game")
+        Text(text = "Start Game (Round 0)")
     }
 }
 

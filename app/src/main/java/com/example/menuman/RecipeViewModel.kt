@@ -1,5 +1,7 @@
 package com.example.menuman
 
+import android.os.Build
+import android.text.Html
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
@@ -22,6 +24,11 @@ class RecipeViewModel : ViewModel() {
                 val response = RecipeRetrofitInstance.apiService.getRandomRecipe()
                 if (response.recipes.isNotEmpty()) {
                     val fetchedRecipe = response.recipes[0]
+                    val cleanInstructions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                        Html.fromHtml(fetchedRecipe.instructions, Html.FROM_HTML_MODE_LEGACY).toString()
+                    } else {
+                        Html.fromHtml(fetchedRecipe.instructions).toString()
+                    }
                     _recipe.value = "Title: \"${fetchedRecipe.title}\"\nInstructions: ${fetchedRecipe.instructions}"
                 } else {
                     _recipe.value = "No recipe found"

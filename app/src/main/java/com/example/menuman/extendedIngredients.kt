@@ -4,5 +4,6 @@ data class extendedIngredients(
     val id: Int,
     val name: String,
     val amount: Double,
-    val unit: String
+    val unit: String,
+    val image: String
 )

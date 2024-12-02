@@ -31,7 +31,7 @@ class RecipeViewModel : ViewModel() {
                     }
                     // Format the extended ingredients
                     val ingredientsList = fetchedRecipe.extendedIngredients.joinToString(separator = "\n") { ingredient ->
-                        "-${ingredient.id}. ${ingredient.name} (${ingredient.amount} ${ingredient.unit})"
+                        "-${ingredient.id}. ${ingredient.name} (${ingredient.amount} ${ingredient.unit}) ${ingredient.image}"
                     }
 
                     // Combine recipe title, instructions, and ingredients

@@ -229,7 +229,7 @@ class MainActivity : ComponentActivity() {
 //                    },
 //                    quoteViewModel
 //                )
-                 // GameScreen(quoteViewModel)
+                  //GameScreen(quoteViewModel)
                 RecipeScreen(recipeViewModel)
             }
         }
@@ -308,11 +308,18 @@ fun MainScreen(
 }
 
 @Composable
-fun RecipeScreen(recipeViewModel: RecipeViewModel){
-    recipeViewModel.getRandomRecipe()
-    val recipe = recipeViewModel.recipe.value
-    Text(recipe)
+fun RecipeScreen(recipeViewModel: RecipeViewModel = RecipeViewModel()) {
+    val recipe by recipeViewModel.recipe
+
+    LaunchedEffect(Unit) {
+        recipeViewModel.getRandomRecipe()
+    }
+
+    Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(text = recipe)
+    }
 }
+
 
 @Composable
 fun GameScreen(quoteViewModel: QuoteViewModel) {

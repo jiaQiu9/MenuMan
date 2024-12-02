@@ -8,25 +8,28 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
 
-class RecipeViewModel: ViewModel() {
+class RecipeViewModel : ViewModel() {
     private val _recipe = mutableStateOf<String>("Loading...")
     val recipe: State<String> get() = _recipe
+    private var isRecipeFetched = false
 
-    fun getRandomRecipe(){
+    fun getRandomRecipe() {
+        if (isRecipeFetched) return
+        isRecipeFetched = true
+
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val response = RecipeRetrofitInstance.apiService.getRandomRecipe()
-
-                if (response.isNotEmpty()) {
-                    val fetchedRecipe = response[0]
-                    _recipe.value = "Title: \"${fetchedRecipe.title}\"\nInstructions: ${fetchedRecipe.instruction}"
+                if (response.recipes.isNotEmpty()) {
+                    val fetchedRecipe = response.recipes[0]
+                    _recipe.value = "Title: \"${fetchedRecipe.title}\"\nInstructions: ${fetchedRecipe.instructions}"
                 } else {
                     _recipe.value = "No recipe found"
                 }
             } catch (e: HttpException) {
-                _recipe.value = "HTTP Error: ${e.message()}"
+                _recipe.value = "HTTP Error: Code ${e.code()}, Message: ${e.message()}"
             } catch (e: Exception) {
-                _recipe.value = "Failed to fetch recipe: ${e.message}"
+                _recipe.value = "Failed to fetch recipe: ${e.localizedMessage}"
             }
         }
     }

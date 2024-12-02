@@ -5,10 +5,11 @@ import retrofit2.http.Headers
 
 interface RecipeApiService {
     @Headers(
-        "apiKey: APIKEY",
-        "Accept: application/json"
-        //"x-rapidapi-host: spoonacular-recipe-food-nutrition-v1.p.rapidapi.com"
+
+        //"Accept: application/json"
+        "x-rapidapi-host: spoonacular-recipe-food-nutrition-v1.p.rapidapi.com",
+        "x-rapidapi-key: APIKEY"
     )
     @GET("recipes/random")
-    suspend fun getRandomRecipe(): List<Recipe>
+    suspend fun getRandomRecipe(): RecipeResponse
 }

@@ -29,7 +29,18 @@ class RecipeViewModel : ViewModel() {
                     } else {
                         Html.fromHtml(fetchedRecipe.instructions).toString()
                     }
-                    _recipe.value = "Title: \"${fetchedRecipe.title}\"\nInstructions: ${fetchedRecipe.instructions}"
+                    // Format the extended ingredients
+                    val ingredientsList = fetchedRecipe.extendedIngredients.joinToString(separator = "\n") { ingredient ->
+                        "-${ingredient.id}. ${ingredient.name} (${ingredient.amount} ${ingredient.unit})"
+                    }
+
+                    // Combine recipe title, instructions, and ingredients
+                    _recipe.value = """
+                        Title: "${fetchedRecipe.title}"
+                        Instructions: $cleanInstructions
+                        Ingredients:
+                        $ingredientsList
+                    """.trimIndent()
                 } else {
                     _recipe.value = "No recipe found"
                 }

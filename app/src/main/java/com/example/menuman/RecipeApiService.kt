@@ -8,7 +8,7 @@ interface RecipeApiService {
 
         //"Accept: application/json"
         "x-rapidapi-host: spoonacular-recipe-food-nutrition-v1.p.rapidapi.com",
-        "x-rapidapi-key: APIKEY"
+        "x-rapidapi-key: "
     )
     @GET("recipes/random")
     suspend fun getRandomRecipe(): RecipeResponse

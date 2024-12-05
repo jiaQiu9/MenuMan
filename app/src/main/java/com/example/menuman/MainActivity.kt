@@ -235,8 +235,9 @@ class MainActivity : ComponentActivity() {
 //                    quoteViewModel
 //                )
                   //GameScreen(quoteViewModel)
-                //RecipeScreen(recipeViewModel)
-                internetCheck(this)
+//                RecipeScreen(recipeViewModel)
+                //internetCheck(this)
+                QuoteScreen(quoteViewModel)
             }
         }
     }
@@ -264,6 +265,29 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+@Composable
+fun QuoteScreen( quoteViewModel: QuoteViewModel){
+    // Fetch the quote only when changeLevel > 10
+    val changeLevel=11
+    val quote = quoteViewModel.quote.value // Get the latest quote value
+
+    val gradientColors = listOf(Color(0xFF15f4ee), Blue, Magenta /*...*/)
+    if (changeLevel > 10) {
+        LaunchedEffect(changeLevel) {
+            quoteViewModel.fetchRandomQuote()  // Fetch a new quote when the condition is met
+        }
+    }
+    Text(
+        text = quote,
+        modifier = Modifier.padding(bottom = 8.dp),
+        fontWeight = FontWeight.Bold,
+        style = TextStyle(
+            brush = Brush.linearGradient(
+                colors = gradientColors
+            )
+        )
+    )
+}
 
 @Composable
 fun MainScreen(

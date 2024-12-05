@@ -4,7 +4,7 @@ import retrofit2.http.Headers
 
 interface QuoteApiService {
     @Headers(
-        "x-rapidapi-key: APIKEY",  // Replace YOUR_API_KEY with your actual RapidAPI key
+        "x-rapidapi-key:",  // Replace YOUR_API_KEY with your actual RapidAPI key
         "x-rapidapi-host: quotes-by-api-ninjas.p.rapidapi.com"
     )
     @GET("v1/quotes")

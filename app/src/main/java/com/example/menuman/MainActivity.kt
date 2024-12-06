@@ -234,10 +234,10 @@ class MainActivity : ComponentActivity() {
 //                    },
 //                    quoteViewModel
 //                )
-                  //GameScreen(quoteViewModel)
-//                RecipeScreen(recipeViewModel)
+                GameScreen(quoteViewModel)
+                //RecipeScreen(recipeViewModel)
                 //internetCheck(this)
-                QuoteScreen(quoteViewModel)
+                //QuoteScreen(quoteViewModel)
             }
         }
     }
@@ -272,7 +272,7 @@ fun QuoteScreen( quoteViewModel: QuoteViewModel){
     val quote = quoteViewModel.quote.value // Get the latest quote value
 
     val gradientColors = listOf(Color(0xFF15f4ee), Blue, Magenta /*...*/)
-    if (changeLevel > 10) {
+    if (changeLevel > 3) {
         LaunchedEffect(changeLevel) {
             quoteViewModel.fetchRandomQuote()  // Fetch a new quote when the condition is met
         }
@@ -363,7 +363,7 @@ fun GameScreen(quoteViewModel: QuoteViewModel) {
 
 
     // Fetch the quote only when changeLevel > 10
-    if (changeLevel > 10) {
+    if (currentRound > 3) {
         LaunchedEffect(changeLevel) {
             quoteViewModel.fetchRandomQuote()  // Fetch a new quote when the condition is met
         }
@@ -371,7 +371,7 @@ fun GameScreen(quoteViewModel: QuoteViewModel) {
 
     val quote = quoteViewModel.quote.value // Get the latest quote value
 
-    if (changeLevel <= 10) {
+    if (currentRound <= 3) {
         Row(modifier = Modifier.fillMaxWidth()) {
             Column(
                 modifier = Modifier
@@ -678,12 +678,11 @@ fun GameScreen(quoteViewModel: QuoteViewModel) {
             Row {
                 Button(
                     onClick = {
-                        changeLevel = 0
-                        currentRound++
+                        currentRound = 0
                     },
                     colors = ButtonDefaults.buttonColors(AppColors.ButtonBackground)
                 ) {
-                    Text("Next Round?", color = AppColors.ButtonText)
+                    Text("Restart?", color = AppColors.ButtonText)
                 }
             }
         }

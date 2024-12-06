@@ -225,16 +225,16 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             MenuManTheme {
-//                MainScreen(
-//                    signUpUser = { email, password, callback ->
-//                        signUpWithEmail(email, password, callback)
-//                    },
-//                    loginUser = { email, password, callback ->
-//                        loginWithEmail(email, password, callback)
-//                    },
-//                    quoteViewModel
-//                )
-                GameScreen(quoteViewModel)
+                MainScreen(
+                    signUpUser = { email, password, callback ->
+                        signUpWithEmail(email, password, callback)
+                    },
+                    loginUser = { email, password, callback ->
+                        loginWithEmail(email, password, callback)
+                    },
+                    quoteViewModel
+                )
+                //GameScreen(quoteViewModel)
                 //RecipeScreen(recipeViewModel)
                 //internetCheck(this)
                 //QuoteScreen(quoteViewModel)
@@ -340,12 +340,22 @@ fun MainScreen(
 @Composable
 fun RecipeScreen(recipeViewModel: RecipeViewModel = RecipeViewModel()) {
     val recipe by recipeViewModel.recipe
+    var currentScreen by rememberSaveable { mutableStateOf("recipe") }
 
     LaunchedEffect(Unit) {
         recipeViewModel.getRandomRecipe()
     }
 
+    when (currentScreen) {
+        "game" -> {
+            GameScreen(quoteViewModel = QuoteViewModel())
+        }
+    }
+
     Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
+        Button(onClick = {currentScreen = "game"}){
+            Text("Go back to main game")
+        }
         Text(text = recipe)
     }
 }
@@ -360,6 +370,9 @@ fun GameScreen(quoteViewModel: QuoteViewModel) {
     val isLandscape = orientation == Configuration.ORIENTATION_LANDSCAPE
     val screenWidth = configuration.screenWidthDp.dp
     val screenHeight = configuration.screenHeightDp.dp
+    var currentScreen by rememberSaveable { mutableStateOf("game") }
+
+
 
 
     // Fetch the quote only when changeLevel > 10
@@ -373,6 +386,11 @@ fun GameScreen(quoteViewModel: QuoteViewModel) {
 
     if (currentRound <= 3) {
         Row(modifier = Modifier.fillMaxWidth()) {
+            when (currentScreen) {
+                "recipe" -> {
+                    RecipeScreen(recipeViewModel = RecipeViewModel())
+                }
+            }
             Column(
                 modifier = Modifier
                     .weight(1f)
@@ -458,7 +476,7 @@ fun GameScreen(quoteViewModel: QuoteViewModel) {
                         ) {
                             item {
                                 Button(
-                                    onClick = { /* Handle click for Button 1 */ },
+                                    onClick = { currentScreen = "recipe" },
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
                                     Text("Button 1")
@@ -498,10 +516,10 @@ fun GameScreen(quoteViewModel: QuoteViewModel) {
                             }
                             item {
                                 Button(
-                                    onClick = { /* Handle click for Button 1 */ },
+                                    onClick = {  },
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
-                                    Text("Button 3")
+                                    Text("Button 4")
                                 }
                             }
                             item {

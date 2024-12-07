@@ -225,17 +225,17 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             MenuManTheme {
-                MainScreen(
-                    signUpUser = { email, password, callback ->
-                        signUpWithEmail(email, password, callback)
-                    },
-                    loginUser = { email, password, callback ->
-                        loginWithEmail(email, password, callback)
-                    },
-                    quoteViewModel
-                )
+//                MainScreen(
+//                    signUpUser = { email, password, callback ->
+//                        signUpWithEmail(email, password, callback)
+//                    },
+//                    loginUser = { email, password, callback ->
+//                        loginWithEmail(email, password, callback)
+//                    },
+//                    quoteViewModel
+//                )
                 //GameScreen(quoteViewModel)
-                //RecipeScreen(recipeViewModel)
+                RecipeScreen(recipeViewModel)
                 //internetCheck(this)
                 //QuoteScreen(quoteViewModel)
             }
@@ -339,11 +339,25 @@ fun MainScreen(
 
 @Composable
 fun RecipeScreen(recipeViewModel: RecipeViewModel = RecipeViewModel()) {
-    val recipe by recipeViewModel.recipe
+    //val recipe by recipeViewModel.recipe
+    val title by recipeViewModel.title
+    val instructions by recipeViewModel.instructions
+    val ingredients by recipeViewModel.ingredients
     var currentScreen by rememberSaveable { mutableStateOf("recipe") }
 
     LaunchedEffect(Unit) {
         recipeViewModel.getRandomRecipe()
+    }
+
+    Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
+        Button(onClick = {currentScreen = "game"}){
+            Text("Go back to main game")
+        }
+        RecipeTitle(title=title)
+        Spacer(modifier=Modifier.height(10.dp))
+        RecipeInstructions(instructions=instructions)
+        Spacer(modifier=Modifier.height(10.dp))
+        RecipeIngredients(ingredients=ingredients)
     }
 
     when (currentScreen) {
@@ -352,12 +366,36 @@ fun RecipeScreen(recipeViewModel: RecipeViewModel = RecipeViewModel()) {
         }
     }
 
-    Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
-        Button(onClick = {currentScreen = "game"}){
-            Text("Go back to main game")
+
+}
+
+
+@Composable
+fun RecipeTitle(title:String){
+    Text(
+        text="Title: $title"
+    )
+}
+
+@Composable
+fun RecipeInstructions(instructions: String){
+    Text(
+        text= "Instructions:\n$instructions"
+    )
+}
+
+@Composable
+fun RecipeIngredients(ingredients: List<String>){
+    Column(modifier=Modifier.padding(16.dp)){
+        Text(text="Ingredients:")
+        ingredients.forEach{ ingredient ->
+            Text(
+                text= "- $ingredient",
+                modifier=Modifier.padding(4.dp)
+            )
         }
-        Text(text = recipe)
     }
+
 }
 
 

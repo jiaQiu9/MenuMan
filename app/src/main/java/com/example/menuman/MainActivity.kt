@@ -366,7 +366,7 @@ fun MainScreen(
 }
 
 @Composable
-fun RecipeScreen(recipeViewModel: RecipeViewModel = RecipeViewModel()) {
+fun RecipeScreen(recipeViewModel: RecipeViewModel = RecipeViewModel(), quoteViewModel: QuoteViewModel=QuoteViewModel()) {
     //val recipe by recipeViewModel.recipe
     val title by recipeViewModel.title
     val instructions by recipeViewModel.instructions
@@ -393,7 +393,7 @@ fun RecipeScreen(recipeViewModel: RecipeViewModel = RecipeViewModel()) {
 
     when (currentScreen) {
         "game" -> {
-            GameScreen(quoteViewModel = QuoteViewModel())
+            GameScreen(quoteViewModel = quoteViewModel)
         }
     }
 
@@ -457,7 +457,7 @@ fun GameScreen(quoteViewModel: QuoteViewModel) {
         Row(modifier = Modifier.fillMaxWidth()) {
             when (currentScreen) {
                 "recipe" -> {
-                    RecipeScreen(recipeViewModel = RecipeViewModel())
+                    RecipeScreen(recipeViewModel = RecipeViewModel(), quoteViewModel = QuoteViewModel())
                 }
             }
             Column(

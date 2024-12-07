@@ -57,6 +57,7 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
+
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -68,6 +69,8 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.TextStyle
 
 import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.style.TextAlign
+import org.intellij.lang.annotations.JdkConstants.HorizontalAlignment
 
 
 object AppColors {
@@ -234,8 +237,8 @@ class MainActivity : ComponentActivity() {
 //                    },
 //                    quoteViewModel
 //                )
-                //GameScreen(quoteViewModel)
-                RecipeScreen(recipeViewModel)
+                GameScreen(quoteViewModel)
+                //RecipeScreen(recipeViewModel)
                 //internetCheck(this)
                 //QuoteScreen(quoteViewModel)
             }
@@ -270,23 +273,48 @@ fun QuoteScreen( quoteViewModel: QuoteViewModel){
     // Fetch the quote only when changeLevel > 10
     val changeLevel=11
     val quote = quoteViewModel.quote.value // Get the latest quote value
-
+    val author = quoteViewModel.author.value
+    val category = quoteViewModel.category.value
     val gradientColors = listOf(Color(0xFF15f4ee), Blue, Magenta /*...*/)
     if (changeLevel > 3) {
         LaunchedEffect(changeLevel) {
             quoteViewModel.fetchRandomQuote()  // Fetch a new quote when the condition is met
         }
     }
-    Text(
-        text = quote,
-        modifier = Modifier.padding(bottom = 8.dp),
-        fontWeight = FontWeight.Bold,
-        style = TextStyle(
-            brush = Brush.linearGradient(
-                colors = gradientColors
+    Column(){
+        Row(){
+            Text(
+                text= author,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(start=4.dp, end=4.dp)
             )
-        )
-    )
+        }
+        Spacer(modifier=Modifier.height(10.dp))
+        Row(){
+            Text(
+                text = quote,
+                modifier = Modifier.padding(bottom = 8.dp),
+                fontWeight = FontWeight.Bold,
+                style = TextStyle(
+                    brush = Brush.linearGradient(
+                        colors = gradientColors
+                    )
+                )
+            )
+        }
+        Spacer(modifier=Modifier.height(10.dp))
+        Row(){
+            Text(
+                text=category,
+                textAlign= TextAlign.Center
+            )
+        }
+    }
+
+
+
+
+
 }
 
 @Composable
@@ -353,11 +381,14 @@ fun RecipeScreen(recipeViewModel: RecipeViewModel = RecipeViewModel()) {
         Button(onClick = {currentScreen = "game"}){
             Text("Go back to main game")
         }
-        RecipeTitle(title=title)
+        //RecipeTitle(title=title)
+        Text(title)
         Spacer(modifier=Modifier.height(10.dp))
-        RecipeInstructions(instructions=instructions)
+        //RecipeInstructions(instructions=instructions)
+        Text(instructions)
         Spacer(modifier=Modifier.height(10.dp))
         RecipeIngredients(ingredients=ingredients)
+
     }
 
     when (currentScreen) {
@@ -414,13 +445,13 @@ fun GameScreen(quoteViewModel: QuoteViewModel) {
 
 
     // Fetch the quote only when changeLevel > 10
-    if (currentRound > 3) {
-        LaunchedEffect(changeLevel) {
-            quoteViewModel.fetchRandomQuote()  // Fetch a new quote when the condition is met
-        }
-    }
-
-    val quote = quoteViewModel.quote.value // Get the latest quote value
+//    if (currentRound > 3) {
+//        LaunchedEffect(changeLevel) {
+//            quoteViewModel.fetchRandomQuote()  // Fetch a new quote when the condition is met
+//        }
+//    }
+//
+//    val quote = quoteViewModel.quote.value // Get the latest quote value
 
     if (currentRound <= 3) {
         Row(modifier = Modifier.fillMaxWidth()) {
@@ -719,16 +750,7 @@ fun GameScreen(quoteViewModel: QuoteViewModel) {
             val gradientColors = listOf(Color(0xFF15f4ee), Blue, Magenta /*...*/)
             Row {
 //                Text("Win, replace with a quote from ZenQuotes", color = AppColors.TextPrimary)
-                Text(
-                    text = quote,
-                    modifier = Modifier.padding(bottom = 8.dp),
-                    fontWeight = FontWeight.Bold,
-                    style = TextStyle(
-                        brush = Brush.linearGradient(
-                            colors = gradientColors
-                        )
-                    )
-                )
+                QuoteScreen(quoteViewModel)
             }
             Spacer(modifier = Modifier.height(10.dp))
             Row {

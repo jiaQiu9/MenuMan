@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application) // Use alias for com.android.application
     alias(libs.plugins.kotlin.android)      // Use alias for kotlin android
     id("com.google.gms.google-services")    // Apply the Google Services plugin
+
 }
 
 android {
@@ -69,7 +70,9 @@ dependencies {
     implementation(libs.okhttp)
     implementation(platform("com.google.firebase:firebase-bom:33.6.0"))
     implementation("com.google.firebase:firebase-analytics")
-    implementation(libs.firebase.auth.ktx)
+    implementation("com.google.firebase:firebase-firestore-ktx")
+    implementation("com.google.firebase:firebase-auth-ktx")
+    implementation("com.google.firebase:firebase-analytics-ktx")
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.runtime.livedata)
 

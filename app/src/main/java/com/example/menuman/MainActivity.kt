@@ -50,7 +50,7 @@ import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
 import com.google.firebase.FirebaseApp
-
+import android.util.Log
 //import android.os.Bundle
 import android.widget.TextView
 import androidx.activity.viewModels
@@ -66,10 +66,14 @@ import androidx.compose.ui.graphics.Color.Companion.Blue
 import androidx.compose.ui.graphics.Color.Companion.Cyan
 import androidx.compose.ui.graphics.Color.Companion.Magenta
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ktx.toObject
 import org.intellij.lang.annotations.JdkConstants.HorizontalAlignment
 
 
@@ -221,29 +225,22 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Initialize Firebase
+        // Init Firebase
         FirebaseApp.initializeApp(this)
         auth = FirebaseAuth.getInstance()
 
-
         setContent {
             MenuManTheme {
-//                MainScreen(
-//                    signUpUser = { email, password, callback ->
-//                        signUpWithEmail(email, password, callback)
-//                    },
-//                    loginUser = { email, password, callback ->
-//                        loginWithEmail(email, password, callback)
-//                    },
-//                    quoteViewModel
-//                )
-                GameScreen(quoteViewModel)
-                //RecipeScreen(recipeViewModel)
-                //internetCheck(this)
-                //QuoteScreen(quoteViewModel)
+                // Fetch quotes from Firebase
+                LaunchedEffect(Unit) {
+                    quoteViewModel.fetchQuoteFromFirebase()
+                }
+                // Display the quotes
+                DisplayQuote(quoteViewModel)
             }
         }
     }
+
 
     private fun signUpWithEmail(email: String, password: String, callback: (String) -> Unit) {
         auth.createUserWithEmailAndPassword(email, password)
@@ -266,185 +263,219 @@ class MainActivity : ComponentActivity() {
                 }
             }
     }
-}
 
-@Composable
-fun QuoteScreen( quoteViewModel: QuoteViewModel){
-    // Fetch the quote only when changeLevel > 10
-    val changeLevel=11
-    val quote = quoteViewModel.quote.value // Get the latest quote value
-    val author = quoteViewModel.author.value
-    val category = quoteViewModel.category.value
-    val gradientColors = listOf(Color(0xFF15f4ee), Blue, Magenta /*...*/)
-    if (changeLevel > 3) {
-        LaunchedEffect(changeLevel) {
-            quoteViewModel.fetchRandomQuote()  // Fetch a new quote when the condition is met
+    @Preview
+    @Composable
+    fun DefaultPreview() {
+        MenuManTheme {
+            // Example of how to display the quote in a preview (you may not use this in production)
+            DisplayQuote(QuoteViewModel()) // Use a mock or real ViewModel
         }
     }
-    Column(){
-        Row(){
-            Text(
-                text= author,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(start=4.dp, end=4.dp)
-            )
+
+    @Composable
+    fun DisplayQuote(quoteViewModel: QuoteViewModel) {
+        val context = LocalContext.current  // Get the current context within composable scope
+        val quote = quoteViewModel.quote.value
+        val name = quoteViewModel.name.value
+        val category = quoteViewModel.category.value
+
+        Column(modifier = Modifier.padding(16.dp)) {
+            if (quote == "Loading..." || name == "Loading author ..." || category == "Loading Category ...") {
+                Text(text = "Loading quote...", modifier = Modifier.padding(16.dp))
+            } else {
+                Text(text = quote)
+                Text(text = name)
+                Text(text = category)
+            }
+
+            Button(onClick = {
+                // Trigger the Firebase quote fetch method
+                Toast.makeText(context, "Fetching new quote...", Toast.LENGTH_SHORT)
+                    .show() // Show toast with correct context
+                quoteViewModel.fetchQuoteFromFirebase() // Fetch a new quote
+            }) {
+                Text(text = "Get New Quote")
+            }
         }
-        Spacer(modifier=Modifier.height(10.dp))
-        Row(){
-            Text(
-                text = quote,
-                modifier = Modifier.padding(bottom = 8.dp),
-                fontWeight = FontWeight.Bold,
-                style = TextStyle(
-                    brush = Brush.linearGradient(
-                        colors = gradientColors
+    }
+
+
+    @Composable
+    fun QuoteScreen(quoteViewModel: QuoteViewModel) {
+        // Fetch the quote only when changeLevel > 10
+        val changeLevel = 11
+        val quote = quoteViewModel.quote.value // Get the latest quote value
+        val author = quoteViewModel.name.value
+        val category = quoteViewModel.category.value
+        val gradientColors = listOf(Color(0xFF15f4ee), Blue, Magenta /*...*/)
+        if (changeLevel > 3) {
+            LaunchedEffect(changeLevel) {
+                quoteViewModel.fetchRandomQuoteFromApi()  // Fetch a new quote when the condition is met
+            }
+        }
+        Column() {
+            Row() {
+                Text(
+                    text = author,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(start = 4.dp, end = 4.dp)
+                )
+            }
+            Spacer(modifier = Modifier.height(10.dp))
+            Row() {
+                Text(
+                    text = quote,
+                    modifier = Modifier.padding(bottom = 8.dp),
+                    fontWeight = FontWeight.Bold,
+                    style = TextStyle(
+                        brush = Brush.linearGradient(
+                            colors = gradientColors
+                        )
                     )
                 )
-            )
-        }
-        Spacer(modifier=Modifier.height(10.dp))
-        Row(){
-            Text(
-                text=category,
-                textAlign= TextAlign.Center
-            )
-        }
-    }
-
-
-
-
-
-}
-
-@Composable
-fun MainScreen(
-    signUpUser: (String, String, (String) -> Unit) -> Unit,
-    loginUser: (String, String, (String) -> Unit) -> Unit,
-    quoteViewModel: QuoteViewModel
-) {
-    var currentScreen by rememberSaveable { mutableStateOf("home") }
-
-    when (currentScreen) {
-        "home" -> {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                Button(onClick = { currentScreen = "login" }) {
-                    Text("Login")
-                }
-                Spacer(modifier = Modifier.height(16.dp))
-                Button(onClick = { currentScreen = "signup" }) {
-                    Text("Sign Up")
-                }
+            }
+            Spacer(modifier = Modifier.height(10.dp))
+            Row() {
+                Text(
+                    text = category,
+                    textAlign = TextAlign.Center
+                )
             }
         }
 
-        "login" -> {
-            LoginScreen(
-                onLoginSuccess = { currentScreen = "game" },
-                loginUser = loginUser
-            )
-        }
-
-        "signup" -> {
-            SignupScreen(
-                onSignupSuccess = { currentScreen = "login" },
-                signUpUser = signUpUser
-            )
-        }
-
-        "game" -> {
-            //Text("Game Screen")
-            GameScreen(quoteViewModel)
-        }
-    }
-}
-
-@Composable
-fun RecipeScreen(recipeViewModel: RecipeViewModel = RecipeViewModel()) {
-    //val recipe by recipeViewModel.recipe
-    val title by recipeViewModel.title
-    val instructions by recipeViewModel.instructions
-    val ingredients by recipeViewModel.ingredients
-    var currentScreen by rememberSaveable { mutableStateOf("recipe") }
-
-    LaunchedEffect(Unit) {
-        recipeViewModel.getRandomRecipe()
-    }
-
-    Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
-        Button(onClick = {currentScreen = "game"}){
-            Text("Go back to main game")
-        }
-        //RecipeTitle(title=title)
-        Text(title)
-        Spacer(modifier=Modifier.height(10.dp))
-        //RecipeInstructions(instructions=instructions)
-        Text(instructions)
-        Spacer(modifier=Modifier.height(10.dp))
-        RecipeIngredients(ingredients=ingredients)
 
     }
 
-    when (currentScreen) {
-        "game" -> {
-            GameScreen(quoteViewModel = QuoteViewModel())
+    @Composable
+    fun MainScreen(
+        signUpUser: (String, String, (String) -> Unit) -> Unit,
+        loginUser: (String, String, (String) -> Unit) -> Unit,
+        quoteViewModel: QuoteViewModel
+    ) {
+        var currentScreen by rememberSaveable { mutableStateOf("home") }
+
+        when (currentScreen) {
+            "home" -> {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Button(onClick = { currentScreen = "login" }) {
+                        Text("Login")
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Button(onClick = { currentScreen = "signup" }) {
+                        Text("Sign Up")
+                    }
+                }
+            }
+
+            "login" -> {
+                LoginScreen(
+                    onLoginSuccess = { currentScreen = "game" },
+                    loginUser = loginUser
+                )
+            }
+
+            "signup" -> {
+                SignupScreen(
+                    onSignupSuccess = { currentScreen = "login" },
+                    signUpUser = signUpUser
+                )
+            }
+
+            "game" -> {
+                //Text("Game Screen")
+                GameScreen(quoteViewModel)
+            }
         }
     }
 
+    @Composable
+    fun RecipeScreen(recipeViewModel: RecipeViewModel = RecipeViewModel()) {
+        //val recipe by recipeViewModel.recipe
+        val title by recipeViewModel.title
+        val instructions by recipeViewModel.instructions
+        val ingredients by recipeViewModel.ingredients
+        var currentScreen by rememberSaveable { mutableStateOf("recipe") }
 
-}
-
-
-@Composable
-fun RecipeTitle(title:String){
-    Text(
-        text="Title: $title"
-    )
-}
-
-@Composable
-fun RecipeInstructions(instructions: String){
-    Text(
-        text= "Instructions:\n$instructions"
-    )
-}
-
-@Composable
-fun RecipeIngredients(ingredients: List<String>){
-    Column(modifier=Modifier.padding(16.dp)){
-        Text(text="Ingredients:")
-        ingredients.forEach{ ingredient ->
-            Text(
-                text= "- $ingredient",
-                modifier=Modifier.padding(4.dp)
-            )
+        LaunchedEffect(Unit) {
+            recipeViewModel.getRandomRecipe()
         }
+
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Button(onClick = { currentScreen = "game" }) {
+                Text("Go back to main game")
+            }
+            //RecipeTitle(title=title)
+            Text(title)
+            Spacer(modifier = Modifier.height(10.dp))
+            //RecipeInstructions(instructions=instructions)
+            Text(instructions)
+            Spacer(modifier = Modifier.height(10.dp))
+            RecipeIngredients(ingredients = ingredients)
+
+        }
+
+        when (currentScreen) {
+            "game" -> {
+                GameScreen(QuoteViewModel())
+            }
+        }
+
+
     }
 
-}
+
+    @Composable
+    fun RecipeTitle(title: String) {
+        Text(
+            text = "Title: $title"
+        )
+    }
+
+    @Composable
+    fun RecipeInstructions(instructions: String) {
+        Text(
+            text = "Instructions:\n$instructions"
+        )
+    }
+
+    @Composable
+    fun RecipeIngredients(ingredients: List<String>) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(text = "Ingredients:")
+            ingredients.forEach { ingredient ->
+                Text(
+                    text = "- $ingredient",
+                    modifier = Modifier.padding(4.dp)
+                )
+            }
+        }
+
+    }
 
 
-@Composable
-fun GameScreen(quoteViewModel: QuoteViewModel) {
-    var changeLevel by rememberSaveable { mutableIntStateOf(0) }
-    var currentRound by rememberSaveable { mutableIntStateOf(0) }
-    val configuration = LocalConfiguration.current
-    val orientation = configuration.orientation
-    val isLandscape = orientation == Configuration.ORIENTATION_LANDSCAPE
-    val screenWidth = configuration.screenWidthDp.dp
-    val screenHeight = configuration.screenHeightDp.dp
-    var currentScreen by rememberSaveable { mutableStateOf("game") }
+    @Composable
+    fun GameScreen(quoteViewModel: QuoteViewModel) {
+        var changeLevel by rememberSaveable { mutableIntStateOf(0) }
+        var currentRound by rememberSaveable { mutableIntStateOf(0) }
+        val configuration = LocalConfiguration.current
+        val orientation = configuration.orientation
+        val isLandscape = orientation == Configuration.ORIENTATION_LANDSCAPE
+        val screenWidth = configuration.screenWidthDp.dp
+        val screenHeight = configuration.screenHeightDp.dp
+        var currentScreen by rememberSaveable { mutableStateOf("game") }
 
 
-
-
-    // Fetch the quote only when changeLevel > 10
+        // Fetch the quote only when changeLevel > 10
 //    if (currentRound > 3) {
 //        LaunchedEffect(changeLevel) {
 //            quoteViewModel.fetchRandomQuote()  // Fetch a new quote when the condition is met
@@ -453,290 +484,291 @@ fun GameScreen(quoteViewModel: QuoteViewModel) {
 //
 //    val quote = quoteViewModel.quote.value // Get the latest quote value
 
-    if (currentRound <= 3) {
-        Row(modifier = Modifier.fillMaxWidth()) {
-            when (currentScreen) {
-                "recipe" -> {
-                    RecipeScreen(recipeViewModel = RecipeViewModel())
+        if (currentRound <= 3) {
+            Row(modifier = Modifier.fillMaxWidth()) {
+                when (currentScreen) {
+                    "recipe" -> {
+                        RecipeScreen(recipeViewModel = RecipeViewModel())
+                    }
                 }
-            }
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .border(BorderStroke(2.dp, SolidColor(AppColors.Secondary)))
-                    .fillMaxHeight()
-            ) {
-                var clicked by remember { mutableStateOf(false) }
-                val offset by animateIntOffsetAsState(
-                    targetValue = if (clicked) IntOffset(4000, 0) else IntOffset(0, 0),
-                    animationSpec = tween(
-                        durationMillis = 2000,
-                        easing = LinearEasing
-                    ),
-                    label = "Offset Animation"
-                )
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .border(BorderStroke(2.dp, SolidColor(AppColors.Secondary)))
+                        .fillMaxHeight()
+                ) {
+                    var clicked by remember { mutableStateOf(false) }
+                    val offset by animateIntOffsetAsState(
+                        targetValue = if (clicked) IntOffset(4000, 0) else IntOffset(0, 0),
+                        animationSpec = tween(
+                            durationMillis = 2000,
+                            easing = LinearEasing
+                        ),
+                        label = "Offset Animation"
+                    )
 
-                Box {
-                    StartButton(onClick = {
-                        changeLevel = 1
-                        if (currentRound == 0) {
-                            currentRound = 1
+                    Box {
+                        StartButton(onClick = {
+                            changeLevel = 1
+                            if (currentRound == 0) {
+                                currentRound = 1
+                            }
+                            clicked = !clicked
+                        })
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(200.dp)
+                                .border(BorderStroke(2.dp, AppColors.Secondary))
+                                .offset { offset },
+                            contentAlignment = Alignment.TopStart
+                        ) {
+                            if (currentRound == 0) {
+                                Image(
+                                    painter = painterResource(id = R.drawable.menumantest),
+                                    contentDescription = null,
+                                )
+                            }
                         }
-                        clicked = !clicked
-                    })
-                    Box(
+                    }
+
+                    if (isLandscape) {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Box(modifier = Modifier.offset { offset }) {
+                            Button(onClick = {
+                                if (currentRound == 1) {
+                                    currentRound = 2
+                                }
+                            }) {
+                                Text("Round 1")
+                            }
+                            if (currentRound == 1) {
+                                Image(
+                                    painter = painterResource(id = R.drawable.menumantest),
+                                    contentDescription = null,
+                                    modifier = Modifier.matchParentSize()
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Row {
+                        Text("Change level $changeLevel", color = AppColors.TextSecondary)
+                    }
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Row {
+                        Text("Current round $currentRound", color = AppColors.TextSecondary)
+                    }
+                    Spacer(modifier = Modifier.height(10.dp))
+                    LazyRow(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(200.dp)
-                            .border(BorderStroke(2.dp, AppColors.Secondary))
-                            .offset { offset },
-                        contentAlignment = Alignment.TopStart
+                            .padding(16.dp)
                     ) {
-                        if (currentRound == 0) {
-                            Image(
-                                painter = painterResource(id = R.drawable.menumantest),
-                                contentDescription = null,
-                            )
-                        }
-                    }
-                }
-
-                if (isLandscape) {
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Box(modifier = Modifier.offset { offset }) {
-                        Button(onClick = {
-                            if (currentRound == 1) {
-                                currentRound = 2
-                            }
-                        }) {
-                            Text("Round 1")
-                        }
-                        if (currentRound == 1) {
-                            Image(
-                                painter = painterResource(id = R.drawable.menumantest),
-                                contentDescription = null,
-                                modifier = Modifier.matchParentSize()
-                            )
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(10.dp))
-                Row {
-                    Text("Change level $changeLevel", color = AppColors.TextSecondary)
-                }
-                Spacer(modifier = Modifier.height(10.dp))
-                Row {
-                    Text("Current round $currentRound", color = AppColors.TextSecondary)
-                }
-                Spacer(modifier = Modifier.height(10.dp))
-                LazyRow(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp)
-                ) {
-                    item {
-                        LazyColumn(
-                            modifier = Modifier
-                                .fillMaxHeight()
-                                .fillMaxWidth(0.66F),
-                            verticalArrangement = Arrangement.spacedBy(8.dp), // Optional spacing between buttons
-                            contentPadding = PaddingValues(16.dp) // Optional padding for the list
-                        ) {
-                            item {
-                                Button(
-                                    onClick = { currentScreen = "recipe" },
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Text("Button 1")
+                        item {
+                            LazyColumn(
+                                modifier = Modifier
+                                    .fillMaxHeight()
+                                    .fillMaxWidth(0.66F),
+                                verticalArrangement = Arrangement.spacedBy(8.dp), // Optional spacing between buttons
+                                contentPadding = PaddingValues(16.dp) // Optional padding for the list
+                            ) {
+                                item {
+                                    Button(
+                                        onClick = { currentScreen = "recipe" },
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Text("Button 1")
+                                    }
                                 }
-                            }
-                            item {
-                                Button(
-                                    onClick = { /* Handle click for Button 1 */ },
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Text("Button 2")
+                                item {
+                                    Button(
+                                        onClick = { /* Handle click for Button 1 */ },
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Text("Button 2")
+                                    }
                                 }
-                            }
-                            item {
-                                Button(
-                                    onClick = { /* Handle click for Button 1 */ },
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Text("Button 2")
+                                item {
+                                    Button(
+                                        onClick = { /* Handle click for Button 1 */ },
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Text("Button 2")
+                                    }
                                 }
-                            }
-                            item {
-                                Button(
-                                    onClick = { /* Handle click for Button 1 */ },
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Text("Button 2")
+                                item {
+                                    Button(
+                                        onClick = { /* Handle click for Button 1 */ },
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Text("Button 2")
+                                    }
                                 }
-                            }
-                            item {
-                                Button(
-                                    onClick = { /* Handle click for Button 1 */ },
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Text("Button 2")
+                                item {
+                                    Button(
+                                        onClick = { /* Handle click for Button 1 */ },
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Text("Button 2")
+                                    }
                                 }
-                            }
-                            item {
-                                Button(
-                                    onClick = {  },
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Text("Button 4")
+                                item {
+                                    Button(
+                                        onClick = { },
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Text("Button 4")
+                                    }
                                 }
-                            }
-                            item {
-                                Button(
-                                    onClick = { /* Handle click for Button 1 */ },
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Text("Button 9")
+                                item {
+                                    Button(
+                                        onClick = { /* Handle click for Button 1 */ },
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Text("Button 9")
+                                    }
                                 }
-                            }
-                            item {
-                                Button(
-                                    onClick = { /* Handle click for Button 1 */ },
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Text("Button 12")
+                                item {
+                                    Button(
+                                        onClick = { /* Handle click for Button 1 */ },
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Text("Button 12")
+                                    }
                                 }
-                            }
-                            item {
-                                Button(
-                                    onClick = { /* Handle click for Button 1 */ },
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Text("Button 12")
+                                item {
+                                    Button(
+                                        onClick = { /* Handle click for Button 1 */ },
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Text("Button 12")
+                                    }
                                 }
-                            }
-                            item {
-                                Button(
-                                    onClick = { /* Handle click for Button 1 */ },
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Text("Button 12")
+                                item {
+                                    Button(
+                                        onClick = { /* Handle click for Button 1 */ },
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Text("Button 12")
+                                    }
                                 }
-                            }
-                            item {
-                                Button(
-                                    onClick = { /* Handle click for Button 1 */ },
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Text("Button 12")
+                                item {
+                                    Button(
+                                        onClick = { /* Handle click for Button 1 */ },
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Text("Button 12")
+                                    }
                                 }
-                            }
-                            item {
-                                Button(
-                                    onClick = { /* Handle click for Button 1 */ },
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Text("Button 12")
+                                item {
+                                    Button(
+                                        onClick = { /* Handle click for Button 1 */ },
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Text("Button 12")
+                                    }
                                 }
-                            }
-                            item {
-                                Box(modifier = Modifier.offset { offset }) {
-                                    Button(onClick = {
+                                item {
+                                    Box(modifier = Modifier.offset { offset }) {
+                                        Button(onClick = {
+                                            if (currentRound == 2) {
+                                                currentRound = 3
+                                            }
+                                        }, modifier = Modifier.fillMaxWidth()) {
+                                            Text("Round 2")
+                                        }
                                         if (currentRound == 2) {
-                                            currentRound = 3
+                                            Image(
+                                                painter = painterResource(id = R.drawable.menumantest),
+                                                contentDescription = null,
+                                                modifier = Modifier.matchParentSize()
+                                            )
                                         }
-                                    }, modifier = Modifier.fillMaxWidth()) {
-                                        Text("Round 2")
-                                    }
-                                    if (currentRound == 2) {
-                                        Image(
-                                            painter = painterResource(id = R.drawable.menumantest),
-                                            contentDescription = null,
-                                            modifier = Modifier.matchParentSize()
-                                        )
                                     }
                                 }
-                            }
-                            item {
-                                Button(
-                                    onClick = { /* Handle click for Button 1 */ },
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Text("Button 5")
+                                item {
+                                    Button(
+                                        onClick = { /* Handle click for Button 1 */ },
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Text("Button 5")
+                                    }
                                 }
                             }
                         }
-                    }
-                    item {
-                        Button(
-                            onClick = {},
-                            modifier = Modifier.padding(end = 8.dp)
-                        ) {
-                            Text("Button 1")
+                        item {
+                            Button(
+                                onClick = {},
+                                modifier = Modifier.padding(end = 8.dp)
+                            ) {
+                                Text("Button 1")
+                            }
                         }
-                    }
-                    item {
-                        Button(
-                            onClick = {},
-                            modifier = Modifier.padding(end = 8.dp)
-                        ) {
-                            Text("Button 2")
+                        item {
+                            Button(
+                                onClick = {},
+                                modifier = Modifier.padding(end = 8.dp)
+                            ) {
+                                Text("Button 2")
+                            }
                         }
-                    }
-                    item {
-                        LazyRow(
-                            modifier = Modifier
-                                .width(200.dp) // Set explicit width for the inner LazyRow
-                                .height(120.dp) // Set explicit height for the inner LazyRow
-                                .border(2.dp, Color.Blue) // Add a blue border
-                                .padding(8.dp) // Add padding inside the border
-                        ) {
-                            item {
-                                Button(
-                                    onClick = {},
-                                    modifier = Modifier.padding(end = 8.dp)
-                                ) {
-                                    Text("Button 2")
+                        item {
+                            LazyRow(
+                                modifier = Modifier
+                                    .width(200.dp) // Set explicit width for the inner LazyRow
+                                    .height(120.dp) // Set explicit height for the inner LazyRow
+                                    .border(2.dp, Color.Blue) // Add a blue border
+                                    .padding(8.dp) // Add padding inside the border
+                            ) {
+                                item {
+                                    Button(
+                                        onClick = {},
+                                        modifier = Modifier.padding(end = 8.dp)
+                                    ) {
+                                        Text("Button 2")
+                                    }
                                 }
-                            }
-                            item {
-                                Button(
-                                    onClick = {},
-                                    modifier = Modifier.padding(end = 8.dp)
-                                ) {
-                                    Text("Button 2")
+                                item {
+                                    Button(
+                                        onClick = {},
+                                        modifier = Modifier.padding(end = 8.dp)
+                                    ) {
+                                        Text("Button 2")
+                                    }
                                 }
-                            }
-                            item {
-                                Button(
-                                    onClick = {},
-                                    modifier = Modifier.padding(end = 8.dp)
-                                ) {
-                                    Text("Button 2")
+                                item {
+                                    Button(
+                                        onClick = {},
+                                        modifier = Modifier.padding(end = 8.dp)
+                                    ) {
+                                        Text("Button 2")
+                                    }
                                 }
-                            }
-                            item {
-                                Button(
-                                    onClick = {},
-                                    modifier = Modifier.padding(end = 8.dp)
-                                ) {
-                                    Text("Button 2")
+                                item {
+                                    Button(
+                                        onClick = {},
+                                        modifier = Modifier.padding(end = 8.dp)
+                                    ) {
+                                        Text("Button 2")
+                                    }
                                 }
-                            }
-                            item {
-                                Box(modifier = Modifier.offset { offset }) {
-                                    Button(onClick = {
+                                item {
+                                    Box(modifier = Modifier.offset { offset }) {
+                                        Button(onClick = {
+                                            if (currentRound == 3) {
+                                                currentRound = 4
+                                            }
+                                        }) {
+                                            Text("Round 3")
+                                        }
                                         if (currentRound == 3) {
-                                            currentRound = 4
+                                            Image(
+                                                painter = painterResource(id = R.drawable.menumantest),
+                                                contentDescription = null
+                                            )
                                         }
-                                    }) {
-                                        Text("Round 3")
-                                    }
-                                    if (currentRound == 3) {
-                                        Image(
-                                            painter = painterResource(id = R.drawable.menumantest),
-                                            contentDescription = null
-                                        )
                                     }
                                 }
                             }
@@ -744,29 +776,28 @@ fun GameScreen(quoteViewModel: QuoteViewModel) {
                     }
                 }
             }
-        }
-    } else {
-        Column(modifier = Modifier.fillMaxSize()) {
-            val gradientColors = listOf(Color(0xFF15f4ee), Blue, Magenta /*...*/)
-            Row {
+        } else {
+            Column(modifier = Modifier.fillMaxSize()) {
+                val gradientColors = listOf(Color(0xFF15f4ee), Blue, Magenta /*...*/)
+                Row {
 //                Text("Win, replace with a quote from ZenQuotes", color = AppColors.TextPrimary)
-                QuoteScreen(quoteViewModel)
-            }
-            Spacer(modifier = Modifier.height(10.dp))
-            Row {
-                Button(
-                    onClick = {
-                        currentRound = 0
-                    },
-                    colors = ButtonDefaults.buttonColors(AppColors.ButtonBackground)
-                ) {
-                    Text("Restart?", color = AppColors.ButtonText)
+                    QuoteScreen(quoteViewModel)
+                }
+                Spacer(modifier = Modifier.height(10.dp))
+                Row {
+                    Button(
+                        onClick = {
+                            currentRound = 0
+                        },
+                        colors = ButtonDefaults.buttonColors(AppColors.ButtonBackground)
+                    ) {
+                        Text("Restart?", color = AppColors.ButtonText)
+                    }
                 }
             }
         }
     }
 }
-
 @Composable
 fun IconFromDrawable(modifier: Modifier = Modifier) {
     Image(
@@ -879,16 +910,16 @@ fun buttonChange(Level: Int, requiredLevel: Int){
 
     if(Level == requiredLevel){
         Box{
-           Button(onClick = {clicked=!clicked},
-               colors = ButtonDefaults.buttonColors(
-               containerColor = Color.Magenta, // Background color
-               contentColor = Color.White
-           ) ){
-               Text("Win $clicked")
-           }
-           Icon(
-               Icons.Filled.Check, contentDescription="checkMark", modifier= Modifier
-                   .align(Alignment.BottomEnd))
+            Button(onClick = {clicked=!clicked},
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.Magenta, // Background color
+                    contentColor = Color.White
+                ) ){
+                Text("Win $clicked")
+            }
+            Icon(
+                Icons.Filled.Check, contentDescription="checkMark", modifier= Modifier
+                    .align(Alignment.BottomEnd))
         }
     } else{
         Button(onClick = {}) {
@@ -1078,6 +1109,8 @@ fun Timer(
         }
     }
 }
+
+
 
 
 

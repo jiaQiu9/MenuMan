@@ -237,7 +237,7 @@ class MainActivity : ComponentActivity() {
 //                    },
 //                    quoteViewModel
 //                )
-                GameScreen(quoteViewModel)
+                //GameScreen(quoteViewModel)
                 //RecipeScreen(recipeViewModel)
                 //internetCheck(this)
                 //QuoteScreen(quoteViewModel)
@@ -273,18 +273,18 @@ fun QuoteScreen( quoteViewModel: QuoteViewModel){
     // Fetch the quote only when changeLevel > 10
     val changeLevel=11
     val quote = quoteViewModel.quote.value // Get the latest quote value
-    val author = quoteViewModel.author.value
+    val name = quoteViewModel.name.value
     val category = quoteViewModel.category.value
     val gradientColors = listOf(Color(0xFF15f4ee), Blue, Magenta /*...*/)
     if (changeLevel > 3) {
         LaunchedEffect(changeLevel) {
-            quoteViewModel.fetchRandomQuote()  // Fetch a new quote when the condition is met
+            quoteViewModel.fetchQuoteFromFirebase()  // Fetch a new quote when the condition is met
         }
     }
     Column(){
         Row(){
             Text(
-                text= author,
+                text= name,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(start=4.dp, end=4.dp)
             )

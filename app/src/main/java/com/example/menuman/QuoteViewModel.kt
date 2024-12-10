@@ -26,40 +26,43 @@ class QuoteViewModel : ViewModel() {
     private val _category = mutableStateOf<String>("Loading Category ... ")
     val category: State<String> get() = _category
 
-    // Fetch a random quote from Firebase Firestore (Offline)
+    // Fetch offline holy shit this was annoying
     fun fetchQuoteFromFirebase() {
-        viewModelScope.launch {
-            val db = FirebaseFirestore.getInstance()
+        val db = FirebaseFirestore.getInstance()
+        db.collection("Quotes")
+            .get()
+            .addOnSuccessListener { result ->
+                // check result for debugging
+                //holy shit this was annoying
+                Log.d("Firestore", "Number of documents: ${result.size()}")
 
-            try {
-                // Switch to IO thread for Firebase fetch
-                val documents = withContext(Dispatchers.IO) {
-                    db.collection("quotes").get().await() // Using await() to get the result
-                }
-
-                if (documents.isEmpty) {
+                if (result.isEmpty) {
                     _quote.value = "No quote found in Firebase"
                 } else {
-                    // Convert documents to a list and select a random quote
-                    val quotesList = documents.toObjects(Quote::class.java)
-                    if (quotesList.isNotEmpty()) {
-                        val randomIndex = Random.nextInt(quotesList.size)
-                        val randomQuote = quotesList[randomIndex]
+                    // Convert values of fields to a list
+                    val quotesList = result.toObjects(Quote::class.java)
+                    //print out the amount of quotes
+                    Log.d("Firestore", "Quotes: $quotesList")
 
+                    if (quotesList.isNotEmpty()) {
+                        //get a random integer from the size of the list
+                        val randomIndex = Random.nextInt(quotesList.size)
+                        //common sense
+                        val randomQuote = quotesList[randomIndex]
+                        //assign the field values into the quote state of each
                         _quote.value = "Quote: \"${randomQuote.quote}\""
                         _name.value = "Name: ${randomQuote.name}"
                         _category.value = "Category: ${randomQuote.category}"
                     } else {
-                        _quote.value = "No quote found in Firebase"
+                        _quote.value = "no quotes inside the colletion"
                     }
                 }
-            } catch (e: Exception) {
-                _quote.value = "Error: ${e.message}"
-                Log.e("FirestoreFetch", "Error fetching quotes: ${e.message}")
             }
-        }
+            .addOnFailureListener { e ->
+                _quote.value = "fuck: ${e.message}"
+                Log.e("FirestoreError", "Im cooked: ${e.message}", e)
+            }
     }
-
 
     // Fetch a random quote from an online API
     fun fetchRandomQuoteFromApi() {

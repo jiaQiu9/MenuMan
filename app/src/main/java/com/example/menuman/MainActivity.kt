@@ -250,7 +250,8 @@ class MainActivity : ComponentActivity() {
                 //internetCheck(this)
                 //QuoteScreen(quoteViewModel)
                 //AccelerometerScreen()
-                LightScreen()
+                //LightScreen()
+                spiritLevelScreen()
             }
         }
     }
@@ -1140,6 +1141,7 @@ class AmbientLight(context: Context){
 
 }
 
+// for shake motion
 class Accelerometer(context: Context){
     private val sensorManager: SensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
     private val accelerometer: Sensor? = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
@@ -1187,6 +1189,82 @@ class Accelerometer(context: Context){
         sensorManager.unregisterListener(sensorEventListener)
         onMotionStopped?.invoke() // Invoke the callback when stopping
         println("Sensor listener unregistered.")
+    }
+}
+
+
+class spiritLevel(context: Context){
+    private val sensorManager: SensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
+    private val accelerometer: Sensor? = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+
+    // StateFlow to expose accelerometer data
+    private val _accelerometerData = MutableStateFlow(Triple(0f, 0f, 0f))
+    val accelerometerData: StateFlow<Triple<Float, Float, Float>> = _accelerometerData
+
+    private var onMotionStopped: (()->Unit)? =  null
+
+    private val sensorEventListener = object : SensorEventListener {
+        override fun onSensorChanged(event: SensorEvent?) {
+            event?.let {
+                val x = it.values[0]
+                val y = it.values[1]
+                val z = it.values[2]
+
+                // Update StateFlow
+                _accelerometerData.value = Triple(x, y, z)
+
+                // Compute acceleration magnitude
+//                val magnitude = sqrt(x * x + y * y + z * z)
+
+                // Stop listening if x and y are 0.0, which is would be haveing the device place on flate surface
+                if ("%.2f".format(x).toFloat()>=0.0 && "%.2f".format(x).toFloat()<0.9) {
+                    stopListening()
+                    println("Big acceleration detected! Stopping sensor listening.")
+                }
+            }
+        }
+
+        override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
+            // Handle accuracy changes if needed
+        }
+    }
+
+    fun startListening(onMotionStoppedCallback: () -> Unit) {
+        onMotionStopped = onMotionStoppedCallback
+        accelerometer?.let {
+            sensorManager.registerListener(sensorEventListener, it, SensorManager.SENSOR_DELAY_NORMAL)
+        }
+    }
+
+    fun stopListening() {
+        sensorManager.unregisterListener(sensorEventListener)
+        onMotionStopped?.invoke() // Invoke the callback when stopping
+        println("Sensor listener unregistered.")
+    }
+}
+
+@Composable
+fun spiritLevelScreen(){
+    val context = LocalContext.current
+    val spiritDetector = remember { spiritLevel(context) }
+
+    val accelerometerData by spiritDetector.accelerometerData.collectAsState()
+
+    var motionDone by remember{ mutableStateOf(false) }
+    DisposableEffect(Unit) {
+        spiritDetector.startListening {
+            motionDone = true
+        }
+        onDispose {
+            spiritDetector.stopListening()
+        }
+    }
+
+    Column {
+        Text(text = "X: ${accelerometerData.first}")
+        Text(text = "Y: ${accelerometerData.second}")
+        Text(text = "Z: ${accelerometerData.third}")
+        Text(text= "MotionDone: $motionDone")
     }
 }
 

@@ -1108,18 +1108,16 @@ class AmbientLight(context: Context){
                 // Calculate the change in light
                 val changeValLx = kotlin.math.abs(currentLightValue - lastLightValue)
 
-
-
                 // Update StateFlow
                 _ambientLightData.value = currentLightValue
                 lastLightValue=currentLightValue
 
 
 
-                // Stop listening if the magnitude exceeds a threshold (e.g., 15 m/s²)
-                if (changeValLx > 4000) {
+
+                if (changeValLx > 5000) {
                     stopListening()
-                    println("Big acceleration detected! Stopping sensor listening.")
+                    println("Large light intensity change detected: $changeValLx lx. Stopping listener.")
                 }
             }
         }

@@ -1217,7 +1217,8 @@ class spiritLevel(context: Context){
 //                val magnitude = sqrt(x * x + y * y + z * z)
 
                 // Stop listening if x and y are 0.0, which is would be haveing the device place on flate surface
-                if ("%.2f".format(x).toFloat()>=0.0 && "%.2f".format(x).toFloat()<0.9) {
+                if ("%.2f".format(x).toFloat()>-0.9 && "%.2f".format(x).toFloat()<0.9
+                    && "%.2f".format(y).toFloat()>-0.9 && "%.2f".format(y).toFloat()<0.9 ) {
                     stopListening()
                     println("Big acceleration detected! Stopping sensor listening.")
                 }

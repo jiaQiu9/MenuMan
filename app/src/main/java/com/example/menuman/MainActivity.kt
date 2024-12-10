@@ -3,6 +3,10 @@ package com.example.menuman
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.res.Configuration
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.os.Build
@@ -66,11 +70,15 @@ import androidx.compose.ui.graphics.Color.Companion.Blue
 import androidx.compose.ui.graphics.Color.Companion.Cyan
 import androidx.compose.ui.graphics.Color.Companion.Magenta
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextAlign
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import org.intellij.lang.annotations.JdkConstants.HorizontalAlignment
+import kotlin.math.sqrt
 
 
 object AppColors {
@@ -241,6 +249,8 @@ class MainActivity : ComponentActivity() {
                 //RecipeScreen(recipeViewModel)
                 //internetCheck(this)
                 //QuoteScreen(quoteViewModel)
+                //AccelerometerScreen()
+                LightScreen()
             }
         }
     }
@@ -1079,5 +1089,149 @@ fun Timer(
     }
 }
 
+
+class AmbientLight(context: Context){
+    private val sensorManager: SensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
+    private val ambientLight: Sensor? = sensorManager.getDefaultSensor(Sensor.TYPE_LIGHT)
+
+    private val _ambientLightData = MutableStateFlow(0f)
+    val ambientLightData: MutableStateFlow<Float> = _ambientLightData
+
+    private var lastLightValue: Float = 0f // Store the previous light value
+
+
+    private val sensorEventListener = object : SensorEventListener {
+        override fun onSensorChanged(event: SensorEvent?) {
+            event?.let {
+                val currentLightValue = it.values[0]
+
+                // Calculate the change in light
+                val changeValLx = kotlin.math.abs(currentLightValue - lastLightValue)
+
+
+
+                // Update StateFlow
+                _ambientLightData.value = currentLightValue
+                lastLightValue=currentLightValue
+
+
+
+                // Stop listening if the magnitude exceeds a threshold (e.g., 15 m/s²)
+                if (changeValLx > 4000) {
+                    stopListening()
+                    println("Big acceleration detected! Stopping sensor listening.")
+                }
+            }
+        }
+
+        override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
+            // Handle accuracy changes if needed
+        }
+    }
+    fun startListening() {
+
+        ambientLight?.let {
+            sensorManager.registerListener(sensorEventListener, it, SensorManager.SENSOR_DELAY_NORMAL)
+        }
+    }
+
+    fun stopListening() {
+        sensorManager.unregisterListener(sensorEventListener)
+        println("Sensor listener unregistered.")
+    }
+
+}
+
+class Accelerometer(context: Context){
+    private val sensorManager: SensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
+    private val accelerometer: Sensor? = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+
+    // StateFlow to expose accelerometer data
+    private val _accelerometerData = MutableStateFlow(Triple(0f, 0f, 0f))
+    val accelerometerData: StateFlow<Triple<Float, Float, Float>> = _accelerometerData
+
+    private var onMotionStopped: (()->Unit)? =  null
+
+    private val sensorEventListener = object : SensorEventListener {
+        override fun onSensorChanged(event: SensorEvent?) {
+            event?.let {
+                val x = it.values[0]
+                val y = it.values[1]
+                val z = it.values[2]
+
+                // Update StateFlow
+                _accelerometerData.value = Triple(x, y, z)
+
+                // Compute acceleration magnitude
+                val magnitude = sqrt(x * x + y * y + z * z)
+
+                // Stop listening if the magnitude exceeds a threshold (e.g., 15 m/s²)
+                if (magnitude > 15) {
+                    stopListening()
+                    println("Big acceleration detected! Stopping sensor listening.")
+                }
+            }
+        }
+
+        override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
+            // Handle accuracy changes if needed
+        }
+    }
+
+    fun startListening(onMotionStoppedCallback: () -> Unit) {
+        onMotionStopped = onMotionStoppedCallback
+        accelerometer?.let {
+            sensorManager.registerListener(sensorEventListener, it, SensorManager.SENSOR_DELAY_NORMAL)
+        }
+    }
+
+    fun stopListening() {
+        sensorManager.unregisterListener(sensorEventListener)
+        onMotionStopped?.invoke() // Invoke the callback when stopping
+        println("Sensor listener unregistered.")
+    }
+}
+
+@Composable
+fun AccelerometerScreen() {
+    val context = LocalContext.current
+    val accelerometerDetector = remember { Accelerometer(context) }
+
+    val accelerometerData by accelerometerDetector.accelerometerData.collectAsState()
+
+    var motionDone by remember{ mutableStateOf(false) }
+    DisposableEffect(Unit) {
+        accelerometerDetector.startListening {
+            motionDone = true
+        }
+        onDispose {
+            accelerometerDetector.stopListening()
+        }
+    }
+
+    Column {
+        Text(text = "X: ${accelerometerData.first}")
+        Text(text = "Y: ${accelerometerData.second}")
+        Text(text = "Z: ${accelerometerData.third}")
+        Text(text= "MotionDone: $motionDone")
+    }
+}
+
+@Composable
+fun LightScreen(){
+    val context = LocalContext.current
+    val lightDetector = remember {AmbientLight(context)}
+    val lightData by lightDetector.ambientLightData.collectAsState()
+
+    DisposableEffect(Unit){
+        lightDetector.startListening()
+        onDispose {
+            lightDetector.stopListening()
+        }
+    }
+    Column{
+        Text(text="light lx ${lightData}")
+    }
+}
 
 

@@ -1,6 +1,5 @@
 package com.example.menuman
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.content.res.Configuration
 import android.hardware.Sensor
@@ -11,11 +10,9 @@ import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.os.Build
 import android.os.Bundle
-import android.widget.Button
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.core.animateIntOffsetAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
@@ -54,30 +51,32 @@ import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
 import com.google.firebase.FirebaseApp
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Text
+import androidx.compose.ui.graphics.Shape
+
 
 //import android.os.Bundle
-import android.widget.TextView
 import androidx.activity.viewModels
-import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
 
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color.Companion.Blue
-import androidx.compose.ui.graphics.Color.Companion.Cyan
 import androidx.compose.ui.graphics.Color.Companion.Magenta
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextAlign
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import org.intellij.lang.annotations.JdkConstants.HorizontalAlignment
 import kotlin.math.sqrt
 
 
@@ -245,13 +244,13 @@ class MainActivity : ComponentActivity() {
 //                    },
 //                    quoteViewModel
 //                )
-                //GameScreen(quoteViewModel)
+                //GameScreen(quoteViewModel, false)
                 //RecipeScreen(recipeViewModel)
                 //internetCheck(this)
                 //QuoteScreen(quoteViewModel)
                 //AccelerometerScreen()
-                //LightScreen()
-                spiritLevelScreen()
+                LightScreen()
+                //spiritLevelScreen()
             }
         }
     }
@@ -371,7 +370,7 @@ fun MainScreen(
 
         "game" -> {
             //Text("Game Screen")
-            GameScreen(quoteViewModel)
+            GameScreen(quoteViewModel, false, 0.0F, LocalContext.current)
         }
     }
 }
@@ -404,13 +403,12 @@ fun RecipeScreen(recipeViewModel: RecipeViewModel = RecipeViewModel()) {
 
     when (currentScreen) {
         "game" -> {
-            GameScreen(quoteViewModel = QuoteViewModel())
+            GameScreen(quoteViewModel = QuoteViewModel(), motionDone = false, lightData = 0.0F, LocalContext.current)
         }
     }
 
 
 }
-
 
 @Composable
 fun RecipeTitle(title:String){
@@ -440,9 +438,8 @@ fun RecipeIngredients(ingredients: List<String>){
 
 }
 
-
 @Composable
-fun GameScreen(quoteViewModel: QuoteViewModel) {
+fun GameScreen(quoteViewModel: QuoteViewModel, motionDone: Boolean, lightData: Float, context: Context) {
     var changeLevel by rememberSaveable { mutableIntStateOf(0) }
     var currentRound by rememberSaveable { mutableIntStateOf(0) }
     val configuration = LocalConfiguration.current
@@ -451,9 +448,9 @@ fun GameScreen(quoteViewModel: QuoteViewModel) {
     val screenWidth = configuration.screenWidthDp.dp
     val screenHeight = configuration.screenHeightDp.dp
     var currentScreen by rememberSaveable { mutableStateOf("game") }
+    var isConnected by rememberSaveable { mutableStateOf(false) }
 
-
-
+    isConnected = checkForInternet(context)
 
     // Fetch the quote only when changeLevel > 10
 //    if (currentRound > 3) {
@@ -464,7 +461,7 @@ fun GameScreen(quoteViewModel: QuoteViewModel) {
 //
 //    val quote = quoteViewModel.quote.value // Get the latest quote value
 
-    if (currentRound <= 3) {
+    if (currentRound <= 10 /*change to final round number*/) {
         Row(modifier = Modifier.fillMaxWidth()) {
             when (currentScreen) {
                 "recipe" -> {
@@ -533,13 +530,9 @@ fun GameScreen(quoteViewModel: QuoteViewModel) {
                 }
 
                 Spacer(modifier = Modifier.height(10.dp))
-                Row {
-                    Text("Change level $changeLevel", color = AppColors.TextSecondary)
-                }
+                Text("Change level $changeLevel", color = AppColors.TextSecondary)
                 Spacer(modifier = Modifier.height(10.dp))
-                Row {
-                    Text("Current round $currentRound", color = AppColors.TextSecondary)
-                }
+                Text("Current round $currentRound", color = AppColors.TextSecondary)
                 Spacer(modifier = Modifier.height(10.dp))
                 LazyRow(
                     modifier = Modifier
@@ -555,60 +548,96 @@ fun GameScreen(quoteViewModel: QuoteViewModel) {
                             contentPadding = PaddingValues(16.dp) // Optional padding for the list
                         ) {
                             item {
-                                Button(
-                                    onClick = { currentScreen = "recipe" },
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Text("Button 1")
-                                }
+                                CustomizableGameButton(
+                                    text = "Click me",
+                                    modifier = Modifier
+                                        .padding(16.dp)
+                                        .fillMaxWidth(),
+                                    defaultBackgroundColor = Color.Blue,
+                                    clickedBackgroundColor = Color.Red,
+                                    borderColor = Color.Cyan,
+                                    borderWidth = 8.dp,
+                                    shape = CircleShape,
+                                )
                             }
                             item {
-                                Button(
-                                    onClick = { /* Handle click for Button 1 */ },
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Text("Button 2")
-                                }
+                                CustomizableGameButton(
+                                    text = "He must be here",
+                                    modifier = Modifier
+                                        .padding(16.dp)
+                                        .fillMaxWidth(),
+                                    defaultBackgroundColor = Color.Gray,
+                                    clickedBackgroundColor = Color.Red,
+                                    borderColor = Color.Green,
+                                    borderWidth = 4.dp,
+                                    shape = RoundedCornerShape(50),
+                                )
                             }
                             item {
-                                Button(
-                                    onClick = { /* Handle click for Button 1 */ },
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Text("Button 2")
-                                }
+                                CustomizableGameButton(
+                                    text = "I promise he's in this one",
+                                    modifier = Modifier
+                                        .padding(16.dp)
+                                        .fillMaxWidth(),
+                                    defaultBackgroundColor = Color.Gray,
+                                    clickedBackgroundColor = Color.Red,
+                                    borderColor = Color.Magenta,
+                                    borderWidth = 4.dp,
+                                    shape = CircleShape,
+                                )
                             }
                             item {
-                                Button(
-                                    onClick = { /* Handle click for Button 1 */ },
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Text("Button 2")
-                                }
+                                CustomizableGameButton(
+                                    text = "Nothing to see here",
+                                    modifier = Modifier
+                                        .padding(16.dp)
+                                        .fillMaxWidth(),
+                                    defaultBackgroundColor = Color.Gray,
+                                    clickedBackgroundColor = Color.Red,
+                                    borderColor = Color.Black,
+                                    borderWidth = 4.dp,
+                                    shape = CircleShape,
+                                )
                             }
                             item {
-                                Button(
-                                    onClick = { /* Handle click for Button 1 */ },
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Text("Button 2")
-                                }
+                                CustomizableGameButton(
+                                    text = "Free candy",
+                                    modifier = Modifier
+                                        .padding(16.dp)
+                                        .fillMaxWidth(),
+                                    defaultBackgroundColor = Color.Gray,
+                                    clickedBackgroundColor = Color.Red,
+                                    borderColor = Color.Magenta,
+                                    borderWidth = 4.dp,
+                                    shape = CircleShape,
+                                )
                             }
                             item {
-                                Button(
-                                    onClick = {  },
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Text("Button 4")
-                                }
+                                CustomizableGameButton(
+                                    text = "(psst click this button)",
+                                    modifier = Modifier
+                                        .padding(16.dp)
+                                        .fillMaxWidth(),
+                                    defaultBackgroundColor = Color.Gray,
+                                    clickedBackgroundColor = Color.Red,
+                                    borderColor = Color.Magenta,
+                                    borderWidth = 4.dp,
+                                    shape = CircleShape,
+                                )
                             }
                             item {
-                                Button(
-                                    onClick = { /* Handle click for Button 1 */ },
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Text("Button 9")
-                                }
+                                FilledGameButton(
+                                    text = "AAAAAAAAH",
+                                    onEndGame = {},
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 8.dp),
+                                    defaultBackgroundColor = Color.LightGray,
+                                    clickedBackgroundColor = Color.Red,
+                                    borderColor = Color.Blue,
+                                    borderWidth = 2.dp,
+                                    shape = CutCornerShape(topStart = 12.dp, bottomEnd = 12.dp)
+                                )
                             }
                             item {
                                 Button(
@@ -679,19 +708,63 @@ fun GameScreen(quoteViewModel: QuoteViewModel) {
                         }
                     }
                     item {
-                        Button(
-                            onClick = {},
-                            modifier = Modifier.padding(end = 8.dp)
-                        ) {
-                            Text("Button 1")
+                        if (motionDone) {
+                            Button(onClick = {
+                                if (currentRound == 4) {
+                                    currentRound = 5
+                                }
+                            }, modifier = Modifier.fillMaxWidth()) {
+                                Text("Motion button")
+                            }
+                            if (currentRound == 4) {
+                                Image(
+                                    painter = painterResource(id = R.drawable.menumantest),
+                                    contentDescription = null,
+                                    modifier = Modifier
+                                )
+                            }
+                        } else {
+                            Text("Waiting for motion...")
                         }
                     }
                     item {
-                        Button(
-                            onClick = {},
-                            modifier = Modifier.padding(end = 8.dp)
-                        ) {
-                            Text("Button 2")
+                        if (lightData >= 10000) {
+                            Button(onClick = {
+                                if (currentRound == 5) {
+                                    currentRound = 6
+                                }
+                            }, modifier = Modifier.fillMaxWidth()) {
+                                Text("Light/dark button")
+                            }
+                            if (currentRound == 5) {
+                                Image(
+                                    painter = painterResource(id = R.drawable.menumantest),
+                                    contentDescription = null,
+                                    modifier = Modifier
+                                )
+                            }
+                        } else {
+                            Text("Waiting for light...")
+                        }
+                    }
+                    item {
+                        if (!isConnected) {
+                            Button(onClick = {
+                                if (currentRound == 6) {
+                                    currentRound = 7
+                                }
+                            }, modifier = Modifier.fillMaxWidth()) {
+                                Text("Offline button")
+                            }
+                            if (currentRound == 6) {
+                                Image(
+                                    painter = painterResource(id = R.drawable.menumantest),
+                                    contentDescription = null,
+                                    modifier = Modifier
+                                )
+                            }
+                        } else {
+                            Text("Waiting for offline...")
                         }
                     }
                     item {
@@ -776,6 +849,77 @@ fun GameScreen(quoteViewModel: QuoteViewModel) {
             }
         }
     }
+}
+
+
+@Composable
+fun CustomizableGameButton(
+    text: String,
+    modifier: Modifier = Modifier,
+    defaultBackgroundColor: Color = Color.Blue,
+    clickedBackgroundColor: Color = Color.Red,
+    borderColor: Color = Color.Black,
+    borderWidth: Dp = 2.dp,
+    shape: Shape = RoundedCornerShape(8.dp),
+) {
+    var isGameActive by remember { mutableStateOf(false) }
+
+    val backgroundColor = if (isGameActive) clickedBackgroundColor else defaultBackgroundColor
+
+    Button(
+        onClick = { isGameActive = true },
+        modifier = modifier,
+        shape = shape,
+        colors = ButtonDefaults.buttonColors(containerColor = backgroundColor),
+        border = BorderStroke(borderWidth, borderColor)
+    ) {
+        Text(text)
+    }
+}
+
+// Example of a function that returns a filled button
+@Composable
+fun FilledGameButton(
+    text: String,
+    onEndGame: () -> Unit,
+    modifier: Modifier = Modifier,
+    defaultBackgroundColor: Color = Color.Green,
+    clickedBackgroundColor: Color = Color.Red,
+    borderColor: Color = Color.Transparent,
+    borderWidth: Dp = 0.dp,
+    shape: Shape = RoundedCornerShape(12.dp)
+) {
+    CustomizableGameButton(
+        text = text,
+        modifier = modifier,
+        defaultBackgroundColor = defaultBackgroundColor,
+        clickedBackgroundColor = clickedBackgroundColor,
+        borderColor = Color.Transparent,
+        borderWidth = 0.dp,
+        shape = RoundedCornerShape(12.dp),
+    )
+}
+
+// Example of a function that returns an outlined button
+@Composable
+fun OutlinedGameButton(
+    text: String,
+    onEndGame: () -> Unit,
+    modifier: Modifier = Modifier,
+    defaultBackgroundColor: Color = Color.Transparent,
+    clickedBackgroundColor: Color = Color.Red,
+    borderColor: Color = Color.Blue,
+    borderWidth: Dp = 2.dp
+) {
+    CustomizableGameButton(
+        text = text,
+        modifier = modifier,
+        defaultBackgroundColor = defaultBackgroundColor,
+        clickedBackgroundColor = clickedBackgroundColor,
+        borderColor = borderColor,
+        borderWidth = borderWidth,
+        shape = RoundedCornerShape(8.dp),
+    )
 }
 
 @Composable
@@ -1216,7 +1360,7 @@ class spiritLevel(context: Context){
                 // Compute acceleration magnitude
 //                val magnitude = sqrt(x * x + y * y + z * z)
 
-                // Stop listening if x and y are 0.0, which is would be haveing the device place on flate surface
+                // Stop listening if x and y are 0.0, which is would be having the device place on flat surface
                 if ("%.2f".format(x).toFloat()>-0.9 && "%.2f".format(x).toFloat()<0.9
                     && "%.2f".format(y).toFloat()>-0.9 && "%.2f".format(y).toFloat()<0.9 ) {
                     stopListening()
@@ -1285,6 +1429,7 @@ fun AccelerometerScreen() {
             accelerometerDetector.stopListening()
         }
     }
+    GameScreen(quoteViewModel = QuoteViewModel(), motionDone = motionDone, lightData = 0.0F, LocalContext.current)
 
     Column {
         Text(text = "X: ${accelerometerData.first}")
@@ -1307,8 +1452,10 @@ fun LightScreen(){
         }
     }
     Column{
-        Text(text="light lx ${lightData}")
+        Text(text="light lx $lightData")
     }
+    GameScreen(quoteViewModel = QuoteViewModel(), motionDone = false, lightData = lightData, LocalContext.current)
+
 }
 
 

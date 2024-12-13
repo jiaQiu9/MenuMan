@@ -2,13 +2,16 @@ package com.example.menuman
 
 import android.os.Build
 import android.text.Html
+import android.util.Log
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
+import kotlin.random.Random
 
 class RecipeViewModel : ViewModel() {
 //    private val _recipe = mutableStateOf<String>("Loading...")
@@ -26,8 +29,47 @@ class RecipeViewModel : ViewModel() {
     private val _ingredients = mutableStateOf(listOf<String>())
     val ingredients: State<List<String>> get() = _ingredients
 
+    private val _dbingredients = mutableStateOf("Loading dbingredients")
+    val dbingredients:State<String> get() = _dbingredients
 
 
+    fun fetchRecipeFromFirebase() {
+        val db = FirebaseFirestore.getInstance()
+        db.collection("Recipes")
+            .get()
+            .addOnSuccessListener { result ->
+                // check result for debugging
+                //holy shit this was annoying
+                Log.d("Firestore", "Number of documents: ${result.size()}")
+
+                if (result.isEmpty) {
+                    _title.value = "No title found in Firebase"
+                } else {
+                    // Convert values of fields to a list
+                    val titlesList =result.toObjects(Dbrecipe::class.java)
+                    //print out the amount of titles
+                    Log.d("Firestore", "titles: $titlesList")
+
+                    if (titlesList.isNotEmpty()) {
+                        //get a random integer from the size of the list
+                        val randomIndex = Random.nextInt(titlesList.size)
+                        //common sense
+                        val randomtitle = titlesList[randomIndex]
+                        //assign the field values into the title state of each
+                        _title.value = "title: \"${randomtitle.title}\""
+                        _instructions.value = "instructions: ${randomtitle.instructions}"
+                        _dbingredients.value = "Ingredients: ${randomtitle.dbingredients}"
+                        _ingredients.value = randomtitle.dbingredients.split(",").map { it.trim() }
+                    } else {
+                        _title.value = "no titles inside the colletion"
+                    }
+                }
+            }
+            .addOnFailureListener { e ->
+                _title.value = "fuck: ${e.message}"
+                Log.e("FirestoreError", "Im cooked: ${e.message}", e)
+            }
+    }
     fun getRandomRecipe() {
         if (isRecipeFetched) return
         isRecipeFetched = true
@@ -69,4 +111,13 @@ class RecipeViewModel : ViewModel() {
             }
         }
     }
+    fun fetchRecipe(isNetworkAvailable: Boolean) {
+        if (isNetworkAvailable) {
+            getRandomRecipe()
+        } else {
+            fetchRecipeFromFirebase()
+        }
+    }
 }
+
+

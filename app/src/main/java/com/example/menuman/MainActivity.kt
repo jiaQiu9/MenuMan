@@ -381,6 +381,7 @@ fun RecipeScreen(recipeViewModel: RecipeViewModel = RecipeViewModel()) {
     val title by recipeViewModel.title
     val instructions by recipeViewModel.instructions
     val ingredients by recipeViewModel.ingredients
+    val dbingredients by recipeViewModel.dbingredients
     var currentScreen by rememberSaveable { mutableStateOf("recipe") }
 
     LaunchedEffect(Unit) {
@@ -397,6 +398,7 @@ fun RecipeScreen(recipeViewModel: RecipeViewModel = RecipeViewModel()) {
         //RecipeInstructions(instructions=instructions)
         Text(instructions)
         Spacer(modifier=Modifier.height(10.dp))
+        Text(text = "\n$dbingredients")
         RecipeIngredients(ingredients=ingredients)
 
     }

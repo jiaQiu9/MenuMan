@@ -1,7 +1,7 @@
 package com.example.menuman
 
-data class Recipe(
+data class Dbrecipe(
     val title: String="",
     val instructions: String="",
-    val extendedIngredients: List<extendedIngredients>
+    val dbingredients: String = ""
 )

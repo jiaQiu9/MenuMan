@@ -247,9 +247,9 @@ class MainActivity : ComponentActivity() {
                 //GameScreen(quoteViewModel, false)
                 //RecipeScreen(recipeViewModel)
                 //internetCheck(this)
-                //QuoteScreen(quoteViewModel)
+                QuoteScreen(quoteViewModel)
                 //AccelerometerScreen()
-                LightScreen()
+                //LightScreen()
                 //spiritLevelScreen()
             }
         }
@@ -286,9 +286,11 @@ fun QuoteScreen( quoteViewModel: QuoteViewModel){
     val name = quoteViewModel.name.value
     val category = quoteViewModel.category.value
     val gradientColors = listOf(Color(0xFF15f4ee), Blue, Magenta /*...*/)
+    val context = LocalContext.current
     if (changeLevel > 3) {
         LaunchedEffect(changeLevel) {
             quoteViewModel.fetchQuoteFromFirebase()  // Fetch a new quote when the condition is met
+            quoteViewModel.fetchQuote(checkForInternet(context))
         }
     }
     Column(){
@@ -381,10 +383,12 @@ fun RecipeScreen(recipeViewModel: RecipeViewModel = RecipeViewModel()) {
     val title by recipeViewModel.title
     val instructions by recipeViewModel.instructions
     val ingredients by recipeViewModel.ingredients
+    val dbingredients by recipeViewModel.dbingredients
     var currentScreen by rememberSaveable { mutableStateOf("recipe") }
+    val context = LocalContext.current
 
     LaunchedEffect(Unit) {
-        recipeViewModel.getRandomRecipe()
+        recipeViewModel.fetchRecipe(checkForInternet(context))
     }
 
     Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -397,6 +401,7 @@ fun RecipeScreen(recipeViewModel: RecipeViewModel = RecipeViewModel()) {
         //RecipeInstructions(instructions=instructions)
         Text(instructions)
         Spacer(modifier=Modifier.height(10.dp))
+        Text(text = "\n$dbingredients")
         RecipeIngredients(ingredients=ingredients)
 
     }

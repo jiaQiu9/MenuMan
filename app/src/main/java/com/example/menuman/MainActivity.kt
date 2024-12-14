@@ -244,10 +244,10 @@ class MainActivity : ComponentActivity() {
 //                    },
 //                    quoteViewModel
 //                )
-                //GameScreen(quoteViewModel, false)
+                GameScreen(quoteViewModel, false, 0.0F, LocalContext.current)
                 //RecipeScreen(recipeViewModel)
                 //internetCheck(this)
-                QuoteScreen(quoteViewModel)
+                //QuoteScreen(quoteViewModel)
                 //AccelerometerScreen()
                 //LightScreen()
                 //spiritLevelScreen()
@@ -1039,16 +1039,16 @@ fun buttonChange(Level: Int, requiredLevel: Int){
 
     if(Level == requiredLevel){
         Box{
-           Button(onClick = {clicked=!clicked},
-               colors = ButtonDefaults.buttonColors(
-               containerColor = Color.Magenta, // Background color
-               contentColor = Color.White
-           ) ){
-               Text("Win $clicked")
-           }
-           Icon(
-               Icons.Filled.Check, contentDescription="checkMark", modifier= Modifier
-                   .align(Alignment.BottomEnd))
+            Button(onClick = {clicked=!clicked},
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.Magenta, // Background color
+                    contentColor = Color.White
+                ) ){
+                Text("Win $clicked")
+            }
+            Icon(
+                Icons.Filled.Check, contentDescription="checkMark", modifier= Modifier
+                    .align(Alignment.BottomEnd))
         }
     } else{
         Button(onClick = {}) {
@@ -1462,5 +1462,3 @@ fun LightScreen(){
     GameScreen(quoteViewModel = QuoteViewModel(), motionDone = false, lightData = lightData, LocalContext.current)
 
 }
-
-

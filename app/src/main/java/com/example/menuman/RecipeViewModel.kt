@@ -33,7 +33,8 @@ class RecipeViewModel : ViewModel() {
     private val _dbingredients = mutableStateOf("Loading dbingredients")
     val dbingredients:State<String> get() = _dbingredients
 
-
+    // fetch a recipe from the firebase's firestore database, this is a feature for the offline
+    // functionality
     fun fetchRecipeFromFirebase() {
         val db = FirebaseFirestore.getInstance()
         db.collection("Recipes")
@@ -71,6 +72,7 @@ class RecipeViewModel : ViewModel() {
                 Log.e("FirestoreError", "Im cooked: ${e.message}", e)
             }
     }
+    // fetch a random recipe from the recipe api
     fun getRandomRecipe() {
         if (isRecipeFetched) return
         isRecipeFetched = true
@@ -100,18 +102,19 @@ class RecipeViewModel : ViewModel() {
                     _ingredients.value= emptyList()
                 }
             } catch (e: HttpException) {
-                //_recipe.value = "HTTP Error: Code ${e.code()}, Message: ${e.message()}"
+
                 _title.value="HTTP Error: ${e.message()}"
                 _instructions.value="HTTP Error: ${e.message()}"
                 _ingredients.value=emptyList()
             } catch (e: Exception) {
-                // _recipe.value = "Failed to fetch recipe: ${e.localizedMessage}"
+
                 _title.value="Failed to fetch recipe: ${e.localizedMessage}"
                 _instructions.value="Failed to fetch recipe: ${e.localizedMessage}"
                 _ingredients.value=emptyList()
             }
         }
     }
+    // use different fetch method depending on the internet accessibility
     fun fetchRecipe(isNetworkAvailable: Boolean) {
         if (isNetworkAvailable) {
             getRandomRecipe()

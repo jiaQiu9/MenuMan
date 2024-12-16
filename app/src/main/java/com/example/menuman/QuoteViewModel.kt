@@ -19,10 +19,10 @@ class QuoteViewModel : ViewModel() {
     // Store the fetched quote
     private val _quote = mutableStateOf<String>("Loading...")
     val quote: State<String> get() = _quote
-
+    // store the author name of the current fetch quote
     private val _name = mutableStateOf<String>("Loading author ... ")
     val name: State<String> get() = _name
-
+    // store the catergory of the current fetched quote
     private val _category = mutableStateOf<String>("Loading Category ... ")
     val category: State<String> get() = _category
 

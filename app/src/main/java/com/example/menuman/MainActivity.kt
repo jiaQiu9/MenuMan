@@ -931,7 +931,7 @@ fun IconFromDrawable(modifier: Modifier = Modifier) {
         modifier = Modifier.size(20.dp),
     )
 }
-
+// composable for testing the methods of checkForInternet
 @Composable
 fun internetCheck(context: Context){
     Button(onClick={
@@ -950,6 +950,8 @@ fun internetCheck(context: Context){
 
 
 // from geeksforgeeks https://www.geeksforgeeks.org/how-to-check-internet-connection-in-kotlin/#
+// to check for the device's internet connection status
+// return a boolean value
 private fun checkForInternet(context: Context): Boolean {
 
     // register activity with the connectivity manager service
@@ -1103,6 +1105,8 @@ fun BoxWithButtonAndIcon() {
     }
 }
 //
+// this was supposed to be a timer compose to retrict the game play,
+// but not working, and not using.
 //// create a composable to
 //// Draw arc and handle
 //@Composable
@@ -1235,7 +1239,8 @@ fun BoxWithButtonAndIcon() {
 //    }
 //}
 
-
+// method to sense the data from light sensor
+// forgot to change the name, to light sensor, but still using the light sensor
 class AmbientLight(context: Context){
     private val sensorManager: SensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
     private val ambientLight: Sensor? = sensorManager.getDefaultSensor(Sensor.TYPE_LIGHT)
@@ -1337,7 +1342,10 @@ class Accelerometer(context: Context){
     }
 }
 
-
+// a form of bubble level, spirit level or whatever name it has
+// when phone is placed flat on a surface, the method will stop listening,
+// this is still using the accelerometer for getting data.
+// this could also be achieved through gyroscope
 class spiritLevel(context: Context){
     private val sensorManager: SensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
     private val accelerometer: Sensor? = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
@@ -1389,6 +1397,7 @@ class spiritLevel(context: Context){
     }
 }
 
+// composable method for testing the spiritlevel
 @Composable
 fun spiritLevelScreen(){
     val context = LocalContext.current
@@ -1414,6 +1423,7 @@ fun spiritLevelScreen(){
     }
 }
 
+// composable method for testing the shake motion
 @Composable
 fun AccelerometerScreen() {
     val context = LocalContext.current
@@ -1439,7 +1449,7 @@ fun AccelerometerScreen() {
         Text(text= "MotionDone: $motionDone")
     }
 }
-
+// composable method for testing the light screen
 @Composable
 fun LightScreen(){
     val context = LocalContext.current

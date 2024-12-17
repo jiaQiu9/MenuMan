@@ -354,7 +354,7 @@ fun MainScreen(
 ) {
     val navController = rememberNavController()
 
-    NavHost(navController = navController, startDestination = "gameScreen") {
+    NavHost(navController = navController, startDestination = "homeScreen") {
         composable("gameScreen") {
             GameScreen(navController)
         }

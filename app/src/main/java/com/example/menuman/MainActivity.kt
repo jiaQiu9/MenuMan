@@ -60,24 +60,34 @@ import androidx.compose.ui.graphics.Shape
 
 //import android.os.Bundle
 import androidx.activity.viewModels
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.clickable
 
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color.Companion.Blue
 import androidx.compose.ui.graphics.Color.Companion.Magenta
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.TextUnit
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlin.math.sqrt
+import kotlin.random.Random
 
 
 object AppColors {
@@ -89,7 +99,67 @@ object AppColors {
     val ButtonBackground = Color(0xFF1976D2)
     val ButtonText = Color.White
 }
+class MainActivity : ComponentActivity() {
+    private lateinit var auth: FirebaseAuth
+    private val quoteViewModel: QuoteViewModel by viewModels()
+    private val recipeViewModel: RecipeViewModel by viewModels()
+    private var showScreen by mutableIntStateOf(0) //change to 0 before deploying
 
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        // Initialize Firebase
+        FirebaseApp.initializeApp(this)
+        auth = FirebaseAuth.getInstance()
+
+
+        setContent {
+            if (showScreen == 0) {
+                MainScreen(
+                    signUpUser = { email, password, callback ->
+                        signUpWithEmail(email, password, callback)
+                    },
+                    loginUser = { email, password, callback ->
+                        loginWithEmail(email, password, callback)
+                    },
+                    quoteViewModel,
+                    onMainFinished = {showScreen = 1}
+                )
+            }
+            else if(showScreen == 1) {
+                IntroScreen(
+                    onIntroFinished = {showScreen = 2}
+                )
+            }
+            else if (showScreen == 2) {
+                GameScreen(quoteViewModel, false, 0.0F, LocalContext.current)
+            }
+        }
+    }
+
+    private fun signUpWithEmail(email: String, password: String, callback: (String) -> Unit) {
+        auth.createUserWithEmailAndPassword(email, password)
+            .addOnCompleteListener(this) { task ->
+                if (task.isSuccessful) {
+                    callback("")
+                } else {
+                    callback(task.exception?.localizedMessage ?: "Signup failed")
+                }
+            }
+    }
+
+    private fun loginWithEmail(email: String, password: String, callback: (String) -> Unit) {
+        auth.signInWithEmailAndPassword(email, password)
+            .addOnCompleteListener(this) { task ->
+                if (task.isSuccessful) {
+                    callback("")
+                } else {
+                    callback(task.exception?.localizedMessage ?: "Login failed")
+                }
+            }
+    }
+}
 
 @Composable
 fun SignupScreen(
@@ -220,68 +290,11 @@ fun LoginScreen(
 }
 
 
-class MainActivity : ComponentActivity() {
-    private lateinit var auth: FirebaseAuth
-    private val quoteViewModel: QuoteViewModel by viewModels()
-    private val recipeViewModel: RecipeViewModel by viewModels()
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-
-        // Initialize Firebase
-        FirebaseApp.initializeApp(this)
-        auth = FirebaseAuth.getInstance()
-
-
-        setContent {
-            MenuManTheme {
-//                MainScreen(
-//                    signUpUser = { email, password, callback ->
-//                        signUpWithEmail(email, password, callback)
-//                    },
-//                    loginUser = { email, password, callback ->
-//                        loginWithEmail(email, password, callback)
-//                    },
-//                    quoteViewModel
-//                )
-                GameScreen(quoteViewModel, false, 0.0F, LocalContext.current)
-                //RecipeScreen(recipeViewModel)
-                //internetCheck(this)
-                //QuoteScreen(quoteViewModel)
-                //AccelerometerScreen()
-                //LightScreen()
-                //spiritLevelScreen()
-            }
-        }
-    }
-
-    private fun signUpWithEmail(email: String, password: String, callback: (String) -> Unit) {
-        auth.createUserWithEmailAndPassword(email, password)
-            .addOnCompleteListener(this) { task ->
-                if (task.isSuccessful) {
-                    callback("")
-                } else {
-                    callback(task.exception?.localizedMessage ?: "Signup failed")
-                }
-            }
-    }
-
-    private fun loginWithEmail(email: String, password: String, callback: (String) -> Unit) {
-        auth.signInWithEmailAndPassword(email, password)
-            .addOnCompleteListener(this) { task ->
-                if (task.isSuccessful) {
-                    callback("")
-                } else {
-                    callback(task.exception?.localizedMessage ?: "Login failed")
-                }
-            }
-    }
-}
 
 @Composable
-fun QuoteScreen( quoteViewModel: QuoteViewModel){
+fun QuoteScreen(quoteViewModel: QuoteViewModel) {
     // Fetch the quote only when changeLevel > 10
-    val changeLevel=11
+    val changeLevel = 11
     val quote = quoteViewModel.quote.value // Get the latest quote value
     val name = quoteViewModel.name.value
     val category = quoteViewModel.category.value
@@ -293,16 +306,16 @@ fun QuoteScreen( quoteViewModel: QuoteViewModel){
             quoteViewModel.fetchQuote(checkForInternet(context))
         }
     }
-    Column(){
-        Row(){
+    Column() {
+        Row() {
             Text(
-                text= name,
+                text = name,
                 fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(start=4.dp, end=4.dp)
+                modifier = Modifier.padding(start = 4.dp, end = 4.dp)
             )
         }
-        Spacer(modifier=Modifier.height(10.dp))
-        Row(){
+        Spacer(modifier = Modifier.height(10.dp))
+        Row() {
             Text(
                 text = quote,
                 modifier = Modifier.padding(bottom = 8.dp),
@@ -314,17 +327,14 @@ fun QuoteScreen( quoteViewModel: QuoteViewModel){
                 )
             )
         }
-        Spacer(modifier=Modifier.height(10.dp))
-        Row(){
+        Spacer(modifier = Modifier.height(10.dp))
+        Row() {
             Text(
-                text=category,
-                textAlign= TextAlign.Center
+                text = category,
+                textAlign = TextAlign.Center
             )
         }
     }
-
-
-
 
 
 }
@@ -333,7 +343,8 @@ fun QuoteScreen( quoteViewModel: QuoteViewModel){
 fun MainScreen(
     signUpUser: (String, String, (String) -> Unit) -> Unit,
     loginUser: (String, String, (String) -> Unit) -> Unit,
-    quoteViewModel: QuoteViewModel
+    quoteViewModel: QuoteViewModel,
+    onMainFinished: () -> Unit
 ) {
     var currentScreen by rememberSaveable { mutableStateOf("home") }
 
@@ -358,7 +369,7 @@ fun MainScreen(
 
         "login" -> {
             LoginScreen(
-                onLoginSuccess = { currentScreen = "game" },
+                onLoginSuccess = { currentScreen = "intro" },
                 loginUser = loginUser
             )
         }
@@ -370,9 +381,8 @@ fun MainScreen(
             )
         }
 
-        "game" -> {
-            //Text("Game Screen")
-            GameScreen(quoteViewModel, false, 0.0F, LocalContext.current)
+        "intro" -> {
+            onMainFinished()
         }
     }
 }
@@ -392,23 +402,28 @@ fun RecipeScreen(recipeViewModel: RecipeViewModel = RecipeViewModel()) {
     }
 
     Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
-        Button(onClick = {currentScreen = "game"}){
+        Button(onClick = { currentScreen = "game" }) {
             Text("Go back to main game")
         }
         //RecipeTitle(title=title)
         Text(title)
-        Spacer(modifier=Modifier.height(10.dp))
+        Spacer(modifier = Modifier.height(10.dp))
         //RecipeInstructions(instructions=instructions)
         Text(instructions)
-        Spacer(modifier=Modifier.height(10.dp))
+        Spacer(modifier = Modifier.height(10.dp))
         Text(text = "\n$dbingredients")
-        RecipeIngredients(ingredients=ingredients)
+        RecipeIngredients(ingredients = ingredients)
 
     }
 
     when (currentScreen) {
         "game" -> {
-            GameScreen(quoteViewModel = QuoteViewModel(), motionDone = false, lightData = 0.0F, LocalContext.current)
+            GameScreen(
+                quoteViewModel = QuoteViewModel(),
+                motionDone = false,
+                lightData = 0.0F,
+                LocalContext.current
+            )
         }
     }
 
@@ -416,27 +431,27 @@ fun RecipeScreen(recipeViewModel: RecipeViewModel = RecipeViewModel()) {
 }
 
 @Composable
-fun RecipeTitle(title:String){
+fun RecipeTitle(title: String) {
     Text(
-        text="Title: $title"
+        text = "Title: $title"
     )
 }
 
 @Composable
-fun RecipeInstructions(instructions: String){
+fun RecipeInstructions(instructions: String) {
     Text(
-        text= "Instructions:\n$instructions"
+        text = "Instructions:\n$instructions"
     )
 }
 
 @Composable
-fun RecipeIngredients(ingredients: List<String>){
-    Column(modifier=Modifier.padding(16.dp)){
-        Text(text="Ingredients:")
-        ingredients.forEach{ ingredient ->
+fun RecipeIngredients(ingredients: List<String>) {
+    Column(modifier = Modifier.padding(16.dp)) {
+        Text(text = "Ingredients:")
+        ingredients.forEach { ingredient ->
             Text(
-                text= "- $ingredient",
-                modifier=Modifier.padding(4.dp)
+                text = "- $ingredient",
+                modifier = Modifier.padding(4.dp)
             )
         }
     }
@@ -444,7 +459,155 @@ fun RecipeIngredients(ingredients: List<String>){
 }
 
 @Composable
-fun GameScreen(quoteViewModel: QuoteViewModel, motionDone: Boolean, lightData: Float, context: Context) {
+fun IntroScreen(onIntroFinished: () -> Unit) {
+    // Example list of drawable resources
+    val imageList = listOf(
+        R.drawable.tadpole1,
+        R.drawable.tadpole2,
+        R.drawable.tadpole3,
+        R.drawable.tadpole4,
+        R.drawable.frog11,
+        R.drawable.frog12,
+        R.drawable.frog13,
+        R.drawable.frog14,
+        R.drawable.frog15,
+        R.drawable.frog16,
+        R.drawable.frog17,
+        R.drawable.whites
+    )
+
+    // Current index in the slideshow
+    var currentIndex by remember { mutableStateOf(0) }
+
+    val specialIndex = 9  // zero-based: this is the second image in the list
+
+    // Simple handler that goes to the next image (wraps around at the end)
+    fun showNextImage() {
+        if (currentIndex < 11) {
+            currentIndex = (currentIndex + 1)
+        }
+    }
+
+    val showOverlay = (currentIndex == specialIndex)
+
+    // Display the current image
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            // If you still want to advance images on click, keep this
+            .clickable { showNextImage() }
+    ) {
+        // 1) The main slideshow image
+        Image(
+            painter = painterResource(id = imageList[currentIndex]),
+            contentDescription = null,
+            contentScale = androidx.compose.ui.layout.ContentScale.Companion.Crop,
+            modifier = Modifier.fillMaxSize()
+        )
+
+        // 2) Show the special double-overlay only at index=9
+        if (currentIndex == 9) {
+            SpecialOverlays(
+                onBothOverlaysFinished = {
+                    // Called when both overlays have faded out.
+                    // Optionally advance to next image automatically:
+                    showNextImage()
+                }
+            )
+        }
+        if (currentIndex == 11) {
+            onIntroFinished()
+        }
+    }
+}
+
+@Composable
+fun SpecialOverlays(onBothOverlaysFinished: () -> Unit) {
+    // Visibility states for each overlay
+    var bottomOverlayVisible by remember { mutableStateOf(false) }
+    var topOverlayVisible by remember { mutableStateOf(false) }
+
+    // When this composable first appears, show the bottom overlay instantly,
+    // then fade in the top overlay.
+    LaunchedEffect(Unit) {
+        // Appear instantly (bottom overlay)
+        bottomOverlayVisible = true
+        // Delay a bit before showing top overlay fade-in
+        delay(100)
+        topOverlayVisible = true
+    }
+
+    // Outer Box to control alignment
+    Box(modifier = Modifier.fillMaxSize()) {
+
+        // 1) Bottom-center overlay: appears instantly, eventually fades out
+        AnimatedVisibility(
+            visible = bottomOverlayVisible,
+            // Appear instantly (0 ms)
+            enter = fadeIn(animationSpec = tween(durationMillis = 0)),
+            // Fade out over 1 second
+            exit = fadeOut(animationSpec = tween(durationMillis = 1000))
+        ) {
+            // Put the Image in a Box scope so .align works
+            Box(modifier = Modifier.fillMaxSize()) {
+                Image(
+                    painter = painterResource(R.drawable.winbutton),
+                    contentDescription = "Bottom Overlay",
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .fillMaxWidth(0.4f),  // shrink width so it’s clearly visible
+                    contentScale = ContentScale.Fit
+                )
+            }
+        }
+    }
+
+    // 2) Top overlay: fades in, then fades out together with the bottom overlay
+    AnimatedVisibility(
+        visible = topOverlayVisible,
+        // Fade in over 1 second
+        enter = fadeIn(animationSpec = tween(durationMillis = 1000)),
+        // Fade out over 1 second
+        exit = fadeOut(animationSpec = tween(durationMillis = 1000))
+    ) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            Image(
+                painter = painterResource(R.drawable.tadpolebare),
+                contentDescription = "Top Overlay",
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth(0.5f),
+                contentScale = ContentScale.Fit
+            )
+        }
+    }
+
+
+    // Fade both out after a few seconds, or on user click:
+    LaunchedEffect(Unit) {
+        delay(3000)
+        bottomOverlayVisible = false
+        topOverlayVisible = false
+    }
+
+    LaunchedEffect(bottomOverlayVisible, topOverlayVisible) {
+        if (!bottomOverlayVisible && !topOverlayVisible) {
+            delay(1000)
+            // The composable is still in the composition at this moment,
+            // so the exit transitions have run. Now call the callback.
+            onBothOverlaysFinished()
+        }
+    }
+}
+
+
+@Composable
+fun GameScreen(
+    quoteViewModel: QuoteViewModel,
+    motionDone: Boolean,
+    lightData: Float,
+    context: Context
+) {
     var changeLevel by rememberSaveable { mutableIntStateOf(0) }
     var currentRound by rememberSaveable { mutableIntStateOf(0) }
     val configuration = LocalConfiguration.current
@@ -454,6 +617,11 @@ fun GameScreen(quoteViewModel: QuoteViewModel, motionDone: Boolean, lightData: F
     val screenHeight = configuration.screenHeightDp.dp
     var currentScreen by rememberSaveable { mutableStateOf("game") }
     var isConnected by rememberSaveable { mutableStateOf(false) }
+    val imageAlpha by animateFloatAsState(
+        targetValue = if (currentRound == 0) 1f else 0f, // Fade out when currentRound changes
+        animationSpec = tween(durationMillis = 1500) // 500ms fade-out animation
+    )
+    var isClicked by remember { mutableStateOf(false) } // Track whether the button is clicked
 
     isConnected = checkForInternet(context)
 
@@ -466,419 +634,238 @@ fun GameScreen(quoteViewModel: QuoteViewModel, motionDone: Boolean, lightData: F
 //
 //    val quote = quoteViewModel.quote.value // Get the latest quote value
 
-    if (currentRound <= 10 /*change to final round number*/) {
-        Row(modifier = Modifier.fillMaxWidth()) {
-            when (currentScreen) {
-                "recipe" -> {
-                    RecipeScreen(recipeViewModel = RecipeViewModel())
-                }
+//    if (currentRound <= 10 /*change to final round number*/) {
+//        Row(modifier = Modifier.fillMaxWidth()) {
+//            when (currentScreen) {
+//                "recipe" -> {
+//                    RecipeScreen(recipeViewModel = RecipeViewModel())
+//                }
+//            }
+//            var clicked by remember { mutableStateOf(false) }
+//            val offset by animateIntOffsetAsState(
+//                targetValue = if (clicked) IntOffset(4000, 0) else IntOffset(0, 0),
+//                animationSpec = tween(
+//                    durationMillis = 2000,
+//                    easing = LinearEasing
+//                ),
+//                label = "Offset Animation"
+//            )
+//
+//
+//            Box(
+//                modifier = Modifier
+//                    .padding(16.dp),
+//                contentAlignment = Alignment.Center
+//            ) {
+//                Box(
+//                    modifier = Modifier.wrapContentSize()
+//                ) {
+//                    // OutlinedGameButton in the center
+//                    OutlinedGameButton(
+//                        text = "Win Game",
+//                        modifier = Modifier.padding(16.dp),
+//                        defaultBackgroundColor = Color.Gray,
+//                        clickedBackgroundColor = if (currentRound == 0) Color.Green else Color.Red,
+//                        onClicked = { currentRound++ }, // Increment the round
+//                        borderColor = Color.Blue,
+//                        borderWidth = 2.dp
+//                    )
+//                    if (currentRound == 0 || imageAlpha > 0f) { // Ensure visibility during fade
+//                        Image(
+//                            painter = painterResource(id = R.drawable.menumantest),
+//                            contentDescription = null,
+//                            modifier = Modifier
+//                                .alpha(imageAlpha) // Apply fade-out animation
+//                                .align(Alignment.BottomCenter) // Align to the bottom center of the button
+//                                .padding(bottom = 8.dp) // Optional: Add spacing between the image and the bottom
+//                        )
+//                    }
+//                }
+//            }
+//
+//            Spacer(modifier = Modifier.height(10.dp))
+//            Text("Change level $changeLevel", color = AppColors.TextSecondary)
+//            Spacer(modifier = Modifier.height(10.dp))
+//            Text("Current round $currentRound", color = AppColors.TextSecondary)
+//            Spacer(modifier = Modifier.height(10.dp))
+//            LazyRow(
+//                modifier = Modifier
+//                    .fillMaxWidth()
+//                    .padding(16.dp)
+//            ) {
+//                item {
+//                    LazyColumn(
+//                        modifier = Modifier
+//                            .fillMaxHeight()
+//                            .fillMaxWidth(0.66F),
+//                        verticalArrangement = Arrangement.spacedBy(8.dp), // Optional spacing between buttons
+//                        contentPadding = PaddingValues(16.dp) // Optional padding for the list
+//                    ) {
+//                    }
+//                }
+//                item {
+//                    OutlinedGameButton(
+//                        text = "Click Me",
+//                        onClicked = {},
+//                        modifier = Modifier.padding(16.dp),
+//                        fontSize = 12.sp,
+//                        defaultBackgroundColor = Color.Gray,
+//                        clickedBackgroundColor = Color.Red,
+//                        borderColor = Blue,
+//                        borderWidth = 2.dp
+//                    )
+//                }
+//                item {
+//                    FilledGameButton(
+//                        text = "Play",
+//                        onClicked = {},
+//                        modifier = Modifier
+//                            .padding(1.dp),
+//                        fontSize = 12.sp,
+//                        defaultBackgroundColor = Color.Gray,
+//                        clickedBackgroundColor = Color.Red,
+//                        borderColor = Color.Transparent,
+//                        borderWidth = 0.dp,
+//                        shape = RoundedCornerShape(12.dp)
+//                    )
+//                }
+//                item {
+//                    LazyRow(
+//                        modifier = Modifier
+//                            .width(200.dp) // Set explicit width for the inner LazyRow
+//                            .height(120.dp) // Set explicit height for the inner LazyRow
+//                            .border(2.dp, Blue) // Add a blue border
+//                            .padding(8.dp) // Add padding inside the border
+//                    ) {
+//
+//
+//                    }
+//                }
+//            }
+//        }
+//    } else {
+//        Column(modifier = Modifier.fillMaxSize()) {
+//            val gradientColors = listOf(Color(0xFF15f4ee), Blue, Magenta /*...*/)
+//            Row {
+////                Text("Win, replace with a quote from ZenQuotes", color = AppColors.TextPrimary)
+//                QuoteScreen(quoteViewModel)
+//            }
+//            Spacer(modifier = Modifier.height(10.dp))
+//            Row {
+//                Button(
+//                    onClick = {
+//                        currentRound = 0
+//                    },
+//                    colors = ButtonDefaults.buttonColors(AppColors.ButtonBackground)
+//                ) {
+//                    Text("Restart?", color = AppColors.ButtonText)
+//                }
+//            }
+//        }
+//    }
+
+    Column(modifier = Modifier.fillMaxSize()) {
+
+        // 1) Top 1/5th (outlined box)
+        // Using 'weight(1f)' for top box and 'weight(4f)' for the bottom region
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f) // top is 1 part out of total 5
+                .border(BorderStroke(2.dp, Color.Black)) // outline
+        ) {
+            val painter = when (currentRound) {
+                1 -> painterResource(id = R.drawable.frogbare)
+                2 -> painterResource(id = R.drawable.frogbare)
+                3 -> painterResource(id = R.drawable.frogbare)
+                4 -> painterResource(id = R.drawable.frogbare)
+                5 -> painterResource(id = R.drawable.frogbare)
+                6 -> painterResource(id = R.drawable.frogbare)
+                7 -> painterResource(id = R.drawable.frogbare)
+                8 -> painterResource(id = R.drawable.frogbare)
+                9 -> painterResource(id = R.drawable.frogbare)
+                10 -> painterResource(id = R.drawable.frogbare)
+                else -> painterResource(id = R.drawable.frogbare)
             }
-            Column(
+
+            Image(
+                painter = painter,
+                contentDescription = "Round $currentRound image",
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop
+            )
+            // OutlinedGameButton in the center
+            OutlinedGameButton(
+                text = "Win Game",
+                modifier = Modifier.padding(16.dp),
+                defaultBackgroundColor = Color.Gray,
+                clickedBackgroundColor = if (currentRound == 0) Color.Green else Color.Red,
+                onClicked = { currentRound++ }, // Increment the round
+                borderColor = Color.Blue,
+                borderWidth = 2.dp
+            )
+        }
+
+
+        // 2) Bottom 4/5ths (no outline)
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(4f) // bottom is 4 parts out of total 5
+        ) {
+            Box(
                 modifier = Modifier
-                    .weight(1f)
-                    .border(BorderStroke(2.dp, SolidColor(AppColors.Secondary)))
-                    .fillMaxHeight()
+                    .padding(16.dp),
+                contentAlignment = Alignment.Center
             ) {
-                var clicked by remember { mutableStateOf(false) }
-                val offset by animateIntOffsetAsState(
-                    targetValue = if (clicked) IntOffset(4000, 0) else IntOffset(0, 0),
-                    animationSpec = tween(
-                        durationMillis = 2000,
-                        easing = LinearEasing
-                    ),
-                    label = "Offset Animation"
-                )
+                Box(
+                    modifier = Modifier.wrapContentSize()
+                ) {
 
-                Box {
-                    StartButton(onClick = {
-                        changeLevel = 1
-                        if (currentRound == 0) {
-                            currentRound = 1
-                        }
-                        clicked = !clicked
-                    })
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(200.dp)
-                            .border(BorderStroke(2.dp, AppColors.Secondary))
-                            .offset { offset },
-                        contentAlignment = Alignment.TopStart
+                }
+            }
+            // Nested LazyColumns and LazyRows that can scroll off-screen
+            LazyColumn(
+                modifier = Modifier.fillMaxSize()
+            ) {
+                // Example: 10 "rows" in our LazyColumn
+                items(50) { columnIndex ->
+
+                    // Each item is itself a LazyRow, going horizontally off-screen
+                    LazyRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        if (currentRound == 0) {
-                            Image(
-                                painter = painterResource(id = R.drawable.menumantest),
-                                contentDescription = null,
+                        // Example: 15 items in each row
+                        items(50) { rowIndex ->
+                            val randomTopStart = remember { Random.nextInt(4, 18).dp }
+                            val randomBottomEnd = remember { Random.nextInt(1, 18).dp }
+                            val randomWidth = remember { (80..200).random().dp }
+                            val randomHeight = remember { (60..120).random().dp }
+                            val randomFont = remember { Random.nextInt(9, 16).sp }
+
+                            FilledGameButton(
+                                text = "\"Item $columnIndex - $rowIndex\"",
+                                onClicked = {},
+                                modifier = Modifier
+                                    .size(randomWidth, randomHeight)
+                                    .padding(vertical = 1.dp),
+                                defaultBackgroundColor = Color.LightGray,
+                                clickedBackgroundColor = Color.Red,
+                                borderColor = Color.Blue,
+                                borderWidth = 2.dp,
+                                shape = CutCornerShape(
+                                    topStart = randomTopStart,
+                                    bottomEnd = randomBottomEnd
+                                ),
+                                fontSize = randomFont
                             )
                         }
                     }
-                }
-
-                if (isLandscape) {
                     Spacer(modifier = Modifier.height(16.dp))
-                    Box(modifier = Modifier.offset { offset }) {
-                        Button(onClick = {
-                            if (currentRound == 1) {
-                                currentRound = 2
-                            }
-                        }) {
-                            Text("Round 1")
-                        }
-                        if (currentRound == 1) {
-                            Image(
-                                painter = painterResource(id = R.drawable.menumantest),
-                                contentDescription = null,
-                                modifier = Modifier.matchParentSize()
-                            )
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(10.dp))
-                Text("Change level $changeLevel", color = AppColors.TextSecondary)
-                Spacer(modifier = Modifier.height(10.dp))
-                Text("Current round $currentRound", color = AppColors.TextSecondary)
-                Spacer(modifier = Modifier.height(10.dp))
-                LazyRow(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp)
-                ) {
-                    item {
-                        LazyColumn(
-                            modifier = Modifier
-                                .fillMaxHeight()
-                                .fillMaxWidth(0.66F),
-                            verticalArrangement = Arrangement.spacedBy(8.dp), // Optional spacing between buttons
-                            contentPadding = PaddingValues(16.dp) // Optional padding for the list
-                        ) {
-                            item {
-                                CustomizableGameButton(
-                                    text = "Click me",
-                                    modifier = Modifier
-                                        .padding(16.dp)
-                                        .fillMaxWidth(),
-                                    defaultBackgroundColor = Color.Blue,
-                                    clickedBackgroundColor = Color.Red,
-                                    borderColor = Color.Cyan,
-                                    borderWidth = 8.dp,
-                                    shape = CircleShape,
-                                )
-                            }
-                            item {
-                                CustomizableGameButton(
-                                    text = "He must be here",
-                                    modifier = Modifier
-                                        .padding(16.dp)
-                                        .fillMaxWidth(),
-                                    defaultBackgroundColor = Color.Gray,
-                                    clickedBackgroundColor = Color.Red,
-                                    borderColor = Color.Green,
-                                    borderWidth = 4.dp,
-                                    shape = RoundedCornerShape(50),
-                                )
-                            }
-                            item {
-                                CustomizableGameButton(
-                                    text = "I promise he's in this one",
-                                    modifier = Modifier
-                                        .padding(16.dp)
-                                        .fillMaxWidth(),
-                                    defaultBackgroundColor = Color.Gray,
-                                    clickedBackgroundColor = Color.Red,
-                                    borderColor = Color.Magenta,
-                                    borderWidth = 4.dp,
-                                    shape = CircleShape,
-                                )
-                            }
-                            item {
-                                CustomizableGameButton(
-                                    text = "Nothing to see here",
-                                    modifier = Modifier
-                                        .padding(16.dp)
-                                        .fillMaxWidth(),
-                                    defaultBackgroundColor = Color.Gray,
-                                    clickedBackgroundColor = Color.Red,
-                                    borderColor = Color.Black,
-                                    borderWidth = 4.dp,
-                                    shape = CircleShape,
-                                )
-                            }
-                            item {
-                                CustomizableGameButton(
-                                    text = "Free candy",
-                                    modifier = Modifier
-                                        .padding(16.dp)
-                                        .fillMaxWidth(),
-                                    defaultBackgroundColor = Color.Gray,
-                                    clickedBackgroundColor = Color.Red,
-                                    borderColor = Color.Magenta,
-                                    borderWidth = 4.dp,
-                                    shape = CircleShape,
-                                )
-                            }
-                            item {
-                                CustomizableGameButton(
-                                    text = "(psst click this button)",
-                                    modifier = Modifier
-                                        .padding(16.dp)
-                                        .fillMaxWidth(),
-                                    defaultBackgroundColor = Color.Gray,
-                                    clickedBackgroundColor = Color.Red,
-                                    borderColor = Color.Magenta,
-                                    borderWidth = 4.dp,
-                                    shape = CircleShape,
-                                )
-                            }
-                            item {
-                                FilledGameButton(
-                                    text = "AAAAAAAAH",
-                                    onEndGame = {},
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(vertical = 8.dp),
-                                    defaultBackgroundColor = Color.LightGray,
-                                    clickedBackgroundColor = Color.Red,
-                                    borderColor = Color.Blue,
-                                    borderWidth = 2.dp,
-                                    shape = CutCornerShape(topStart = 12.dp, bottomEnd = 12.dp)
-                                )
-                            }
-                            item {
-                                Button(
-                                    onClick = { /* Handle click for Button 1 */ },
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Text("Button 12")
-                                }
-                            }
-                            item {
-                                Button(
-                                    onClick = { /* Handle click for Button 1 */ },
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Text("Button 12")
-                                }
-                            }
-                            item {
-                                Button(
-                                    onClick = { /* Handle click for Button 1 */ },
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Text("Button 12")
-                                }
-                            }
-                            item {
-                                Button(
-                                    onClick = { /* Handle click for Button 1 */ },
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Text("Button 12")
-                                }
-                            }
-                            item {
-                                Button(
-                                    onClick = { /* Handle click for Button 1 */ },
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Text("Button 12")
-                                }
-                            }
-                            item {
-                                Box(modifier = Modifier.offset { offset }) {
-                                    Button(onClick = {
-                                        if (currentRound == 2) {
-                                            currentRound = 3
-                                        }
-                                    }, modifier = Modifier.fillMaxWidth()) {
-                                        Text("Round 2")
-                                    }
-                                    if (currentRound == 2) {
-                                        Image(
-                                            painter = painterResource(id = R.drawable.menumantest),
-                                            contentDescription = null,
-                                            modifier = Modifier.matchParentSize()
-                                        )
-                                    }
-                                }
-                            }
-                            item {
-                                Button(
-                                    onClick = { /* Handle click for Button 1 */ },
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Text("Button 5")
-                                }
-                            }
-                        }
-                    }
-                    item {
-                        if (motionDone) {
-                            Button(onClick = {
-                                if (currentRound == 4) {
-                                    currentRound = 5
-                                }
-                            }, modifier = Modifier.fillMaxWidth()) {
-                                Text("Motion button")
-                            }
-                            if (currentRound == 4) {
-                                Image(
-                                    painter = painterResource(id = R.drawable.menumantest),
-                                    contentDescription = null,
-                                    modifier = Modifier
-                                )
-                            }
-                        } else {
-                            Text("Waiting for motion...")
-                        }
-                    }
-                    item {
-                        if (lightData >= 10000) {
-                            Button(onClick = {
-                                if (currentRound == 5) {
-                                    currentRound = 6
-                                }
-                            }, modifier = Modifier.fillMaxWidth()) {
-                                Text("Light/dark button")
-                            }
-                            if (currentRound == 5) {
-                                Image(
-                                    painter = painterResource(id = R.drawable.menumantest),
-                                    contentDescription = null,
-                                    modifier = Modifier
-                                )
-                            }
-                        } else {
-                            Text("Waiting for light...")
-                        }
-                    }
-                    item {
-                        if (!isConnected) {
-                            Button(onClick = {
-                                if (currentRound == 6) {
-                                    currentRound = 7
-                                }
-                            }, modifier = Modifier.fillMaxWidth()) {
-                                Text("Offline button")
-                            }
-                            if (currentRound == 6) {
-                                Image(
-                                    painter = painterResource(id = R.drawable.menumantest),
-                                    contentDescription = null,
-                                    modifier = Modifier
-                                )
-                            }
-                        } else {
-                            Text("Waiting for offline...")
-                        }
-                    }
-                    item {
-                        LazyRow(
-                            modifier = Modifier
-                                .width(200.dp) // Set explicit width for the inner LazyRow
-                                .height(120.dp) // Set explicit height for the inner LazyRow
-                                .border(2.dp, Color.Blue) // Add a blue border
-                                .padding(8.dp) // Add padding inside the border
-                        ) {
-                            item {
-                                Button(
-                                    onClick = {},
-                                    modifier = Modifier.padding(end = 8.dp)
-                                ) {
-                                    Text("Button 2")
-                                }
-                            }
-                            item {
-                                Button(
-                                    onClick = {},
-                                    modifier = Modifier.padding(end = 8.dp)
-                                ) {
-                                    Text("Button 2")
-                                }
-                            }
-                            item {
-                                Button(
-                                    onClick = {},
-                                    modifier = Modifier.padding(end = 8.dp)
-                                ) {
-                                    Text("Button 2")
-                                }
-                            }
-                            item {
-                                Button(
-                                    onClick = {},
-                                    modifier = Modifier.padding(end = 8.dp)
-                                ) {
-                                    Text("Button 2")
-                                }
-                            }
-                            item {
-                                Box(modifier = Modifier.offset { offset }) {
-                                    Button(onClick = {
-                                        if (currentRound == 3) {
-                                            currentRound = 4
-                                        }
-                                    }) {
-                                        Text("Round 3")
-                                    }
-                                    if (currentRound == 3) {
-                                        Image(
-                                            painter = painterResource(id = R.drawable.menumantest),
-                                            contentDescription = null
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
                 }
             }
         }
-    } else {
-        Column(modifier = Modifier.fillMaxSize()) {
-            val gradientColors = listOf(Color(0xFF15f4ee), Blue, Magenta /*...*/)
-            Row {
-//                Text("Win, replace with a quote from ZenQuotes", color = AppColors.TextPrimary)
-                QuoteScreen(quoteViewModel)
-            }
-            Spacer(modifier = Modifier.height(10.dp))
-            Row {
-                Button(
-                    onClick = {
-                        currentRound = 0
-                    },
-                    colors = ButtonDefaults.buttonColors(AppColors.ButtonBackground)
-                ) {
-                    Text("Restart?", color = AppColors.ButtonText)
-                }
-            }
-        }
-    }
-}
-
-
-@Composable
-fun CustomizableGameButton(
-    text: String,
-    modifier: Modifier = Modifier,
-    defaultBackgroundColor: Color = Color.Blue,
-    clickedBackgroundColor: Color = Color.Red,
-    borderColor: Color = Color.Black,
-    borderWidth: Dp = 2.dp,
-    shape: Shape = RoundedCornerShape(8.dp),
-) {
-    var isGameActive by remember { mutableStateOf(false) }
-
-    val backgroundColor = if (isGameActive) clickedBackgroundColor else defaultBackgroundColor
-
-    Button(
-        onClick = { isGameActive = true },
-        modifier = modifier,
-        shape = shape,
-        colors = ButtonDefaults.buttonColors(containerColor = backgroundColor),
-        border = BorderStroke(borderWidth, borderColor)
-    ) {
-        Text(text)
     }
 }
 
@@ -886,46 +873,100 @@ fun CustomizableGameButton(
 @Composable
 fun FilledGameButton(
     text: String,
-    onEndGame: () -> Unit,
+    onClicked: () -> Unit,
     modifier: Modifier = Modifier,
     defaultBackgroundColor: Color = Color.Green,
     clickedBackgroundColor: Color = Color.Red,
     borderColor: Color = Color.Transparent,
     borderWidth: Dp = 0.dp,
-    shape: Shape = RoundedCornerShape(12.dp)
+    shape: Shape = RoundedCornerShape(12.dp),
+    fontSize: TextUnit = 14.sp // Add a font size parameter
 ) {
-    CustomizableGameButton(
-        text = text,
-        modifier = modifier,
-        defaultBackgroundColor = defaultBackgroundColor,
-        clickedBackgroundColor = clickedBackgroundColor,
-        borderColor = Color.Transparent,
-        borderWidth = 0.dp,
-        shape = RoundedCornerShape(12.dp),
+    // State to track whether the button is clicked
+    var isClicked by remember { mutableStateOf(false) }
+
+    // Animate the background color based on the clicked state
+    val backgroundColor by animateColorAsState(
+        targetValue = if (isClicked) clickedBackgroundColor else defaultBackgroundColor,
+        animationSpec = tween(durationMillis = 500), label = "" // 500ms fade duration
     )
+
+    // Reset the clicked state after a delay using LaunchedEffect
+    if (isClicked) {
+        LaunchedEffect(isClicked) {
+            kotlinx.coroutines.delay(500) // Delay before fading back
+            isClicked = false
+        }
+    }
+
+    Box(
+        modifier = modifier
+            .background(backgroundColor, shape = RoundedCornerShape(8.dp))
+            .border(BorderStroke(borderWidth, borderColor), RoundedCornerShape(8.dp))
+            .clickable {
+                isClicked = true
+                onClicked()
+            }
+            .padding(16.dp)
+    ) {
+        Text(
+            text = text,
+            modifier = Modifier.align(Alignment.Center),
+            fontSize = fontSize, // Use the smaller font size
+            color = Color.Black
+        )
+    }
 }
 
 // Example of a function that returns an outlined button
 @Composable
 fun OutlinedGameButton(
     text: String,
-    onEndGame: () -> Unit,
+    onClicked: () -> Unit,
     modifier: Modifier = Modifier,
     defaultBackgroundColor: Color = Color.Transparent,
     clickedBackgroundColor: Color = Color.Red,
-    borderColor: Color = Color.Blue,
-    borderWidth: Dp = 2.dp
+    borderColor: Color = Blue,
+    borderWidth: Dp = 2.dp,
+    fontSize: TextUnit = 14.sp // Add a font size parameter
 ) {
-    CustomizableGameButton(
-        text = text,
-        modifier = modifier,
-        defaultBackgroundColor = defaultBackgroundColor,
-        clickedBackgroundColor = clickedBackgroundColor,
-        borderColor = borderColor,
-        borderWidth = borderWidth,
-        shape = RoundedCornerShape(8.dp),
+    // State to track whether the button is clicked
+    var isClicked by remember { mutableStateOf(false) }
+
+    // Animate the background color based on the clicked state
+    val backgroundColor by animateColorAsState(
+        targetValue = if (isClicked) clickedBackgroundColor else defaultBackgroundColor,
+        animationSpec = tween(durationMillis = 500), label = "" // 500ms fade duration
     )
+
+    // Reset the clicked state after a delay using LaunchedEffect
+    if (isClicked) {
+        LaunchedEffect(isClicked) {
+            kotlinx.coroutines.delay(500) // Delay before fading back
+            isClicked = false
+        }
+    }
+
+    // Button composable
+    Box(
+        modifier = modifier
+            .background(backgroundColor, shape = RoundedCornerShape(8.dp))
+            .border(BorderStroke(borderWidth, borderColor), RoundedCornerShape(8.dp))
+            .clickable {
+                isClicked = true
+                onClicked()
+            }
+            .padding(16.dp)
+    ) {
+        Text(
+            text = text,
+            modifier = Modifier.align(Alignment.Center),
+            fontSize = fontSize, // Use the smaller font size
+            color = Color.Black
+        )
+    }
 }
+
 
 @Composable
 fun IconFromDrawable(modifier: Modifier = Modifier) {
@@ -937,14 +978,14 @@ fun IconFromDrawable(modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun internetCheck(context: Context){
-    Button(onClick={
+fun internetCheck(context: Context) {
+    Button(onClick = {
         if (checkForInternet(context)) {
             Toast.makeText(context, "Connected", Toast.LENGTH_SHORT).show()
         } else {
             Toast.makeText(context, "Disconnected", Toast.LENGTH_SHORT).show()
         }
-    }){
+    }) {
 
         Text("Internet checker.")
     }
@@ -952,12 +993,12 @@ fun internetCheck(context: Context){
 }
 
 
-
 // from geeksforgeeks https://www.geeksforgeeks.org/how-to-check-internet-connection-in-kotlin/#
 private fun checkForInternet(context: Context): Boolean {
 
     // register activity with the connectivity manager service
-    val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+    val connectivityManager =
+        context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
 
     // if the android version is equal to M
     // or greater we need to use the
@@ -993,119 +1034,6 @@ private fun checkForInternet(context: Context): Boolean {
     }
 }
 
-@Composable
-fun StartButton(onClick: () -> Unit) {
-    Button(
-        onClick = onClick, // Pass the onClick lambda to the Button
-        colors = ButtonDefaults.buttonColors(
-            containerColor = Color.Blue, // Customize as needed
-            contentColor = Color.White
-        )
-    ) {
-        Text(text = "Start Game (Round 0)")
-    }
-}
-
-@Composable
-fun LazyWithButtonRand(buttonsCount: Int, RandNum: Int){
-    val buttonData = List(buttonsCount){index->
-        "Button ${index +1}"
-    }
-    LazyColumn(){
-        items(buttonData.size){ index->
-            val buttonId = index+1
-            buttonChange(buttonId, RandNum)
-        }
-    }
-}
-
-@Composable
-fun LazyButtonFixed(buttonsCount: Int, Level:Int, ChangeLevel:()->Unit){
-    val buttonData = List(buttonsCount){index->
-        "Button ${index +1}"
-    }
-    LazyColumn(){
-        items(buttonData.size){ index->
-            val buttonId = index+1
-            buttonChangeLevelChange(buttonId, Level, ChangeLevel)
-        }
-    }
-}
-
-
-@Composable
-fun buttonChange(Level: Int, requiredLevel: Int){
-    var clicked by remember { mutableStateOf(false)}
-
-    if(Level == requiredLevel){
-        Box{
-            Button(onClick = {clicked=!clicked},
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.Magenta, // Background color
-                    contentColor = Color.White
-                ) ){
-                Text("Win $clicked")
-            }
-            Icon(
-                Icons.Filled.Check, contentDescription="checkMark", modifier= Modifier
-                    .align(Alignment.BottomEnd))
-        }
-    } else{
-        Button(onClick = {}) {
-            Text("Filled $Level")
-        }
-    }
-}
-
-@Composable
-fun buttonChangeLevelChange(Level: Int, requiredLevel:Int, onFind:()->Unit){
-    if(Level == requiredLevel){
-        Box{
-            Button(onClick = {onFind()},
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.Magenta, // Background color
-                    contentColor = Color.White
-                ) ){
-                Text("Win")
-            }
-            Icon(Icons.Filled.Check, contentDescription="checkMark", modifier= Modifier.align(Alignment.BottomEnd))
-        }
-    } else{
-        Button(onClick = {}) {
-            Text("Filled ${Level}")
-        }
-    }
-}
-
-@Composable
-fun BoxWithButtonAndIcon() {
-    Box(
-        modifier = Modifier
-            .background(Color.Gray) // Optional background color for the Box
-    ) {
-        // Button at the center of the Box (or wherever you want)
-        Button(
-            onClick = { /* Handle button click */ },
-            modifier = Modifier.align(Alignment.Center) // Optional: Button at center
-        ) {
-            Text("Click Me")
-        }
-
-        // Icon at the bottom-right corner of the Box
-        IconButton(
-            onClick = { /* Handle icon click */ },
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-
-        ) {
-            Icon(
-                imageVector = Icons.Default.Favorite,
-                contentDescription = "Favorite Icon",
-                tint = Color.White // Optional: Color of the icon
-            )
-        }
-    }
-}
 
 // create a composable to
 // Draw arc and handle
@@ -1127,7 +1055,7 @@ fun Timer(
 
     // set initial value to 1
     initialValue: Float = 1f,
-    strokeWidth: Dp =5.dp
+    strokeWidth: Dp = 5.dp
 ) {
     // create variable for
     // size of the composable
@@ -1147,7 +1075,7 @@ fun Timer(
         mutableStateOf(false)
     }
     LaunchedEffect(key1 = currentTime, key2 = isTimerRunning) {
-        if(currentTime > 0 && isTimerRunning) {
+        if (currentTime > 0 && isTimerRunning) {
             delay(100L)
             currentTime -= 100L
             value = currentTime / totalTime.toFloat()
@@ -1210,7 +1138,7 @@ fun Timer(
         // create button to start or stop the timer
         Button(
             onClick = {
-                if(currentTime <= 0L) {
+                if (currentTime <= 0L) {
                     currentTime = totalTime
                     isTimerRunning = true
                 } else {
@@ -1240,8 +1168,9 @@ fun Timer(
 }
 
 
-class AmbientLight(context: Context){
-    private val sensorManager: SensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
+class AmbientLight(context: Context) {
+    private val sensorManager: SensorManager =
+        context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
     private val ambientLight: Sensor? = sensorManager.getDefaultSensor(Sensor.TYPE_LIGHT)
 
     private val _ambientLightData = MutableStateFlow(0f)
@@ -1260,7 +1189,7 @@ class AmbientLight(context: Context){
 
                 // Update StateFlow
                 _ambientLightData.value = currentLightValue
-                lastLightValue=currentLightValue
+                lastLightValue = currentLightValue
 
 
 
@@ -1276,10 +1205,15 @@ class AmbientLight(context: Context){
             // Handle accuracy changes if needed
         }
     }
+
     fun startListening() {
 
         ambientLight?.let {
-            sensorManager.registerListener(sensorEventListener, it, SensorManager.SENSOR_DELAY_NORMAL)
+            sensorManager.registerListener(
+                sensorEventListener,
+                it,
+                SensorManager.SENSOR_DELAY_NORMAL
+            )
         }
     }
 
@@ -1291,15 +1225,16 @@ class AmbientLight(context: Context){
 }
 
 // for shake motion
-class Accelerometer(context: Context){
-    private val sensorManager: SensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
+class Accelerometer(context: Context) {
+    private val sensorManager: SensorManager =
+        context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
     private val accelerometer: Sensor? = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
 
     // StateFlow to expose accelerometer data
     private val _accelerometerData = MutableStateFlow(Triple(0f, 0f, 0f))
     val accelerometerData: StateFlow<Triple<Float, Float, Float>> = _accelerometerData
 
-    private var onMotionStopped: (()->Unit)? =  null
+    private var onMotionStopped: (() -> Unit)? = null
 
     private val sensorEventListener = object : SensorEventListener {
         override fun onSensorChanged(event: SensorEvent?) {
@@ -1330,7 +1265,11 @@ class Accelerometer(context: Context){
     fun startListening(onMotionStoppedCallback: () -> Unit) {
         onMotionStopped = onMotionStoppedCallback
         accelerometer?.let {
-            sensorManager.registerListener(sensorEventListener, it, SensorManager.SENSOR_DELAY_NORMAL)
+            sensorManager.registerListener(
+                sensorEventListener,
+                it,
+                SensorManager.SENSOR_DELAY_NORMAL
+            )
         }
     }
 
@@ -1342,15 +1281,16 @@ class Accelerometer(context: Context){
 }
 
 
-class spiritLevel(context: Context){
-    private val sensorManager: SensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
+class spiritLevel(context: Context) {
+    private val sensorManager: SensorManager =
+        context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
     private val accelerometer: Sensor? = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
 
     // StateFlow to expose accelerometer data
     private val _accelerometerData = MutableStateFlow(Triple(0f, 0f, 0f))
     val accelerometerData: StateFlow<Triple<Float, Float, Float>> = _accelerometerData
 
-    private var onMotionStopped: (()->Unit)? =  null
+    private var onMotionStopped: (() -> Unit)? = null
 
     private val sensorEventListener = object : SensorEventListener {
         override fun onSensorChanged(event: SensorEvent?) {
@@ -1366,8 +1306,9 @@ class spiritLevel(context: Context){
 //                val magnitude = sqrt(x * x + y * y + z * z)
 
                 // Stop listening if x and y are 0.0, which is would be having the device place on flat surface
-                if ("%.2f".format(x).toFloat()>-0.9 && "%.2f".format(x).toFloat()<0.9
-                    && "%.2f".format(y).toFloat()>-0.9 && "%.2f".format(y).toFloat()<0.9 ) {
+                if ("%.2f".format(x).toFloat() > -0.9 && "%.2f".format(x).toFloat() < 0.9
+                    && "%.2f".format(y).toFloat() > -0.9 && "%.2f".format(y).toFloat() < 0.9
+                ) {
                     stopListening()
                     println("Big acceleration detected! Stopping sensor listening.")
                 }
@@ -1382,7 +1323,11 @@ class spiritLevel(context: Context){
     fun startListening(onMotionStoppedCallback: () -> Unit) {
         onMotionStopped = onMotionStoppedCallback
         accelerometer?.let {
-            sensorManager.registerListener(sensorEventListener, it, SensorManager.SENSOR_DELAY_NORMAL)
+            sensorManager.registerListener(
+                sensorEventListener,
+                it,
+                SensorManager.SENSOR_DELAY_NORMAL
+            )
         }
     }
 
@@ -1394,13 +1339,13 @@ class spiritLevel(context: Context){
 }
 
 @Composable
-fun spiritLevelScreen(){
+fun spiritLevelScreen() {
     val context = LocalContext.current
     val spiritDetector = remember { spiritLevel(context) }
 
     val accelerometerData by spiritDetector.accelerometerData.collectAsState()
 
-    var motionDone by remember{ mutableStateOf(false) }
+    var motionDone by remember { mutableStateOf(false) }
     DisposableEffect(Unit) {
         spiritDetector.startListening {
             motionDone = true
@@ -1414,7 +1359,7 @@ fun spiritLevelScreen(){
         Text(text = "X: ${accelerometerData.first}")
         Text(text = "Y: ${accelerometerData.second}")
         Text(text = "Z: ${accelerometerData.third}")
-        Text(text= "MotionDone: $motionDone")
+        Text(text = "MotionDone: $motionDone")
     }
 }
 
@@ -1425,7 +1370,7 @@ fun AccelerometerScreen() {
 
     val accelerometerData by accelerometerDetector.accelerometerData.collectAsState()
 
-    var motionDone by remember{ mutableStateOf(false) }
+    var motionDone by remember { mutableStateOf(false) }
     DisposableEffect(Unit) {
         accelerometerDetector.startListening {
             motionDone = true
@@ -1434,31 +1379,41 @@ fun AccelerometerScreen() {
             accelerometerDetector.stopListening()
         }
     }
-    GameScreen(quoteViewModel = QuoteViewModel(), motionDone = motionDone, lightData = 0.0F, LocalContext.current)
+    GameScreen(
+        quoteViewModel = QuoteViewModel(),
+        motionDone = motionDone,
+        lightData = 0.0F,
+        LocalContext.current
+    )
 
     Column {
         Text(text = "X: ${accelerometerData.first}")
         Text(text = "Y: ${accelerometerData.second}")
         Text(text = "Z: ${accelerometerData.third}")
-        Text(text= "MotionDone: $motionDone")
+        Text(text = "MotionDone: $motionDone")
     }
 }
 
 @Composable
-fun LightScreen(){
+fun LightScreen() {
     val context = LocalContext.current
-    val lightDetector = remember {AmbientLight(context)}
+    val lightDetector = remember { AmbientLight(context) }
     val lightData by lightDetector.ambientLightData.collectAsState()
 
-    DisposableEffect(Unit){
+    DisposableEffect(Unit) {
         lightDetector.startListening()
         onDispose {
             lightDetector.stopListening()
         }
     }
-    Column{
-        Text(text="light lx $lightData")
+    Column {
+        Text(text = "light lx $lightData")
     }
-    GameScreen(quoteViewModel = QuoteViewModel(), motionDone = false, lightData = lightData, LocalContext.current)
+    GameScreen(
+        quoteViewModel = QuoteViewModel(),
+        motionDone = false,
+        lightData = lightData,
+        LocalContext.current
+    )
 
 }

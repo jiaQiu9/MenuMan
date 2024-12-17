@@ -2,6 +2,7 @@ package com.example.menuman
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
+// the retrofit for the quotes api
 object RetrofitInstance {
     private const val BASE_URL = "https://quotes-by-api-ninjas.p.rapidapi.com"
 

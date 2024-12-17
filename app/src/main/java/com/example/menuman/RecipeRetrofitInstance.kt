@@ -4,7 +4,7 @@ import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
-
+// this is the retrofit for the recipe
 object RecipeRetrofitInstance {
     private const val BASE_URL = "https://spoonacular-recipe-food-nutrition-v1.p.rapidapi.com"
 
@@ -12,9 +12,9 @@ object RecipeRetrofitInstance {
         level = HttpLoggingInterceptor.Level.BODY
     }
 
-    val client = OkHttpClient.Builder()
-        .addInterceptor(loggingInterceptor)
-        .build()
+//    val client = OkHttpClient.Builder()
+//        .addInterceptor(loggingInterceptor)
+//        .build()
 
     val retrofit: Retrofit by lazy {
         Retrofit.Builder()

@@ -295,7 +295,7 @@ fun LoginScreen(
 
 
 @Composable
-fun QuoteScreen(quoteViewModel: QuoteViewModel) {
+fun QuoteScreen(navController: NavController, quoteViewModel: QuoteViewModel) {
     // Fetch the quote only when changeLevel > 10
     val changeLevel = 11
     val quote = quoteViewModel.quote.value // Get the latest quote value
@@ -313,8 +313,8 @@ fun QuoteScreen(quoteViewModel: QuoteViewModel) {
             quoteViewModel.fetchQuote(true)
         }
     }
-    Column() {
-        Row() {
+    Column {
+        Row {
             Text(
                 text = name,
                 fontWeight = FontWeight.Bold,
@@ -322,7 +322,7 @@ fun QuoteScreen(quoteViewModel: QuoteViewModel) {
             )
         }
         Spacer(modifier = Modifier.height(10.dp))
-        Row() {
+        Row {
             Text(
                 text = quote,
                 modifier = Modifier.padding(bottom = 8.dp),
@@ -335,15 +335,19 @@ fun QuoteScreen(quoteViewModel: QuoteViewModel) {
             )
         }
         Spacer(modifier = Modifier.height(10.dp))
-        Row() {
+        Row {
             Text(
                 text = category,
                 textAlign = TextAlign.Center
             )
         }
+        Button(onClick = {
+            navController.navigate("introScreen")
+        })
+        {
+            Text("Replay Game")
+        }
     }
-
-
 }
 
 @Composable
@@ -359,7 +363,7 @@ fun MainScreen(
             GameScreen(navController)
         }
         composable("quoteScreen") {
-            QuoteScreen(quoteViewModel)
+            QuoteScreen(navController, quoteViewModel)
         }
         composable("introScreen") {
             IntroScreen(navController)
@@ -402,12 +406,15 @@ fun MainScreen(
 }
 
 @Composable
-fun RecipeScreen(navController: NavController, recipeViewModel: RecipeViewModel = RecipeViewModel()) {
+fun RecipeScreen(
+    navController: NavController,
+    recipeViewModel: RecipeViewModel = RecipeViewModel()
+) {
     //val recipe by recipeViewModel.recipe
-    val title by rememberSaveable{recipeViewModel.title}
-    val instructions by rememberSaveable{recipeViewModel.instructions}
-    val ingredients by rememberSaveable{recipeViewModel.ingredients}
-    val dbingredients by rememberSaveable{recipeViewModel.dbingredients}
+    val title by rememberSaveable { recipeViewModel.title }
+    val instructions by rememberSaveable { recipeViewModel.instructions }
+    val ingredients by rememberSaveable { recipeViewModel.ingredients }
+    val dbingredients by rememberSaveable { recipeViewModel.dbingredients }
     val context = LocalContext.current
 
 
@@ -433,8 +440,8 @@ fun RecipeScreen(navController: NavController, recipeViewModel: RecipeViewModel 
                     Spacer(modifier = Modifier.height(10.dp))
                 }
                 item {
-                Text(text = "\n$dbingredients")
-                    }
+                    Text(text = "\n$dbingredients")
+                }
                 item {
                     RecipeIngredients(ingredients = ingredients)
                 }
@@ -952,567 +959,567 @@ fun GameScreen(navController: NavController) {
 }
 
 
-    @Composable
-    fun FilledGameButton(
-        text: String,
-        onClicked: () -> Unit,
-        // Pass in the currentRound condition
-        currentRound: Int,
-        // Optional image overlay
-        onCurrentRoundChanged: (Int) -> Unit,
-        imagePainter: Painter? = null,
-        columnIndex: Int,
-        rowIndex: Int,
-        modifier: Modifier = Modifier,
-        defaultBackgroundColor: Color = Color.LightGray,      // e.g., a neutral default
-        borderColor: Color = Color.Transparent,
-        borderWidth: Dp = 0.dp,
-        shape: Shape = RoundedCornerShape(12.dp),
-        fontSize: TextUnit = 14.sp,
-        animationDurationMs: Int = 500,
-        shouldShowImage1: Boolean,
-        shouldShowImage2: Boolean,
-        shouldShowImage3: Boolean,
-        shouldShowImage4: Boolean,
-        shouldShowImage5: Boolean,
-        shouldShowImage6: Boolean,
-        shouldShowImage7: Boolean
+@Composable
+fun FilledGameButton(
+    text: String,
+    onClicked: () -> Unit,
+    // Pass in the currentRound condition
+    currentRound: Int,
+    // Optional image overlay
+    onCurrentRoundChanged: (Int) -> Unit,
+    imagePainter: Painter? = null,
+    columnIndex: Int,
+    rowIndex: Int,
+    modifier: Modifier = Modifier,
+    defaultBackgroundColor: Color = Color.LightGray,      // e.g., a neutral default
+    borderColor: Color = Color.Transparent,
+    borderWidth: Dp = 0.dp,
+    shape: Shape = RoundedCornerShape(12.dp),
+    fontSize: TextUnit = 14.sp,
+    animationDurationMs: Int = 500,
+    shouldShowImage1: Boolean,
+    shouldShowImage2: Boolean,
+    shouldShowImage3: Boolean,
+    shouldShowImage4: Boolean,
+    shouldShowImage5: Boolean,
+    shouldShowImage6: Boolean,
+    shouldShowImage7: Boolean
 
-    ) {
-        // Track whether the button was clicked
-        var isClicked by remember { mutableStateOf(false) }
-        var flashGreen by remember { mutableStateOf(false) }
+) {
+    // Track whether the button was clicked
+    var isClicked by remember { mutableStateOf(false) }
+    var flashGreen by remember { mutableStateOf(false) }
 
-        // Determine the target color based on `isClicked` and `currentRound`
-        val targetColor = when {
-            flashGreen -> Color.Green
-            isClicked -> Color.Red
-            else -> defaultBackgroundColor
+    // Determine the target color based on `isClicked` and `currentRound`
+    val targetColor = when {
+        flashGreen -> Color.Green
+        isClicked -> Color.Red
+        else -> defaultBackgroundColor
+    }
+
+    // Animate the background color to the target color
+    val backgroundColor by animateColorAsState(
+        targetValue = targetColor,
+        animationSpec = tween(500) // 500 ms fade
+    )
+
+    if (flashGreen) {
+        LaunchedEffect(Unit) {
+            delay(500)  // Wait the flash duration
+            flashGreen = false
+            onCurrentRoundChanged(currentRound + 1)  // increment AFTER the flash
         }
+    }
 
-        // Animate the background color to the target color
-        val backgroundColor by animateColorAsState(
-            targetValue = targetColor,
-            animationSpec = tween(500) // 500 ms fade
-        )
-
-        if (flashGreen) {
-            LaunchedEffect(Unit) {
-                delay(500)  // Wait the flash duration
-                flashGreen = false
-                onCurrentRoundChanged(currentRound + 1)  // increment AFTER the flash
-            }
+    // Auto-reset the clicked state after the animation delay
+    if (isClicked) {
+        LaunchedEffect(isClicked) {
+            delay(animationDurationMs.toLong())
+            isClicked = false
         }
+    }
 
-        // Auto-reset the clicked state after the animation delay
-        if (isClicked) {
-            LaunchedEffect(isClicked) {
-                delay(animationDurationMs.toLong())
-                isClicked = false
-            }
-        }
-
-        Box(
-            modifier = modifier
-                .background(backgroundColor, shape)  // Apply the animated color + shape
-                .border(BorderStroke(borderWidth, borderColor), shape)
-                .clickable {
-                    isClicked = true
-                    if (shouldShowImage1 || shouldShowImage2 || shouldShowImage3 || shouldShowImage4 || shouldShowImage5 || shouldShowImage6 || shouldShowImage7) {
-                        flashGreen = true
-                    }
+    Box(
+        modifier = modifier
+            .background(backgroundColor, shape)  // Apply the animated color + shape
+            .border(BorderStroke(borderWidth, borderColor), shape)
+            .clickable {
+                isClicked = true
+                if (shouldShowImage1 || shouldShowImage2 || shouldShowImage3 || shouldShowImage4 || shouldShowImage5 || shouldShowImage6 || shouldShowImage7) {
+                    flashGreen = true
                 }
-                .clip(shape)  // forcibly clip the contents to the shape
-                .background(backgroundColor)
-                .padding(1.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            // Optional image overlay (below text, above background)
-            imagePainter?.let { painter ->
-                Image(
-                    painter = painter,
-                    contentDescription = null,
-                    modifier = Modifier
-                        .matchParentSize()
-                )
             }
-
-            // Centered text on top
-            Text(
-                text = text,
-                fontSize = fontSize,
-                color = Color.Black
+            .clip(shape)  // forcibly clip the contents to the shape
+            .background(backgroundColor)
+            .padding(1.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        // Optional image overlay (below text, above background)
+        imagePainter?.let { painter ->
+            Image(
+                painter = painter,
+                contentDescription = null,
+                modifier = Modifier
+                    .matchParentSize()
             )
         }
+
+        // Centered text on top
+        Text(
+            text = text,
+            fontSize = fontSize,
+            color = Color.Black
+        )
+    }
+}
+
+
+// Example of a function that returns an outlined button
+@Composable
+fun OutlinedGameButton(
+    text: String,
+    onClicked: () -> Unit,
+    modifier: Modifier = Modifier,
+    defaultBackgroundColor: Color = Color.Transparent,
+    clickedBackgroundColor: Color = Color.Red,
+    borderColor: Color = Blue,
+    borderWidth: Dp = 2.dp,
+    fontSize: TextUnit = 14.sp // Add a font size parameter
+) {
+    // State to track whether the button is clicked
+    var isClicked by remember { mutableStateOf(false) }
+
+    // Animate the background color based on the clicked state
+    val backgroundColor by animateColorAsState(
+        targetValue = if (isClicked) clickedBackgroundColor else defaultBackgroundColor,
+        animationSpec = tween(durationMillis = 500), label = "" // 500ms fade duration
+    )
+
+    // Reset the clicked state after a delay using LaunchedEffect
+    if (isClicked) {
+        LaunchedEffect(isClicked) {
+            kotlinx.coroutines.delay(500) // Delay before fading back
+            isClicked = false
+        }
     }
 
-
-    // Example of a function that returns an outlined button
-    @Composable
-    fun OutlinedGameButton(
-        text: String,
-        onClicked: () -> Unit,
-        modifier: Modifier = Modifier,
-        defaultBackgroundColor: Color = Color.Transparent,
-        clickedBackgroundColor: Color = Color.Red,
-        borderColor: Color = Blue,
-        borderWidth: Dp = 2.dp,
-        fontSize: TextUnit = 14.sp // Add a font size parameter
+    // Button composable
+    Box(
+        modifier = modifier
+            .background(backgroundColor, shape = RoundedCornerShape(8.dp))
+            .border(BorderStroke(borderWidth, borderColor), RoundedCornerShape(8.dp))
+            .clickable {
+                isClicked = true
+                onClicked()
+            }
+            .padding(16.dp)
     ) {
-        // State to track whether the button is clicked
-        var isClicked by remember { mutableStateOf(false) }
-
-        // Animate the background color based on the clicked state
-        val backgroundColor by animateColorAsState(
-            targetValue = if (isClicked) clickedBackgroundColor else defaultBackgroundColor,
-            animationSpec = tween(durationMillis = 500), label = "" // 500ms fade duration
-        )
-
-        // Reset the clicked state after a delay using LaunchedEffect
-        if (isClicked) {
-            LaunchedEffect(isClicked) {
-                kotlinx.coroutines.delay(500) // Delay before fading back
-                isClicked = false
-            }
-        }
-
-        // Button composable
-        Box(
-            modifier = modifier
-                .background(backgroundColor, shape = RoundedCornerShape(8.dp))
-                .border(BorderStroke(borderWidth, borderColor), RoundedCornerShape(8.dp))
-                .clickable {
-                    isClicked = true
-                    onClicked()
-                }
-                .padding(16.dp)
-        ) {
-            Text(
-                text = text,
-                modifier = Modifier.align(Alignment.Center),
-                fontSize = fontSize, // Use the smaller font size
-                color = Color.Black
-            )
-        }
-    }
-
-
-    @Composable
-    fun IconFromDrawable(modifier: Modifier = Modifier) {
-        Image(
-            painter = painterResource(id = R.drawable.menumantest),
-            contentDescription = "Custom Icon",
-            modifier = Modifier.size(20.dp),
+        Text(
+            text = text,
+            modifier = Modifier.align(Alignment.Center),
+            fontSize = fontSize, // Use the smaller font size
+            color = Color.Black
         )
     }
+}
 
 
-    fun connectivityFlow(context: Context) = callbackFlow<Boolean> {
-        val connectivityManager =
-            context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+@Composable
+fun IconFromDrawable(modifier: Modifier = Modifier) {
+    Image(
+        painter = painterResource(id = R.drawable.menumantest),
+        contentDescription = "Custom Icon",
+        modifier = Modifier.size(20.dp),
+    )
+}
 
-        val networkCallback = object : ConnectivityManager.NetworkCallback() {
-            override fun onAvailable(network: Network) {
-                trySend(true)  // Network became available
-            }
 
-            override fun onLost(network: Network) {
-                trySend(false) // Network was lost
-            }
+fun connectivityFlow(context: Context) = callbackFlow<Boolean> {
+    val connectivityManager =
+        context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+
+    val networkCallback = object : ConnectivityManager.NetworkCallback() {
+        override fun onAvailable(network: Network) {
+            trySend(true)  // Network became available
         }
 
-        // Register for network callbacks
-        val request = NetworkRequest.Builder().build()
-        connectivityManager.registerNetworkCallback(request, networkCallback)
-
-        // Clean up callback when the flow collector stops collecting
-        awaitClose {
-            connectivityManager.unregisterNetworkCallback(networkCallback)
+        override fun onLost(network: Network) {
+            trySend(false) // Network was lost
         }
     }
 
+    // Register for network callbacks
+    val request = NetworkRequest.Builder().build()
+    connectivityManager.registerNetworkCallback(request, networkCallback)
 
-    // create a composable to
+    // Clean up callback when the flow collector stops collecting
+    awaitClose {
+        connectivityManager.unregisterNetworkCallback(networkCallback)
+    }
+}
+
+
+// create a composable to
 // Draw arc and handle
-    @Composable
-    fun Timer(
+@Composable
+fun Timer(
 
-        // total time of the timer
-        totalTime: Long,
+    // total time of the timer
+    totalTime: Long,
 
-        // circular handle color
-        handleColor: Color,
+    // circular handle color
+    handleColor: Color,
 
-        // color of inactive bar / progress bar
-        inactiveBarColor: Color,
+    // color of inactive bar / progress bar
+    inactiveBarColor: Color,
 
-        // color of active bar
-        activeBarColor: Color,
-        modifier: Modifier = Modifier,
+    // color of active bar
+    activeBarColor: Color,
+    modifier: Modifier = Modifier,
 
-        // set initial value to 1
-        initialValue: Float = 1f,
-        strokeWidth: Dp = 5.dp
+    // set initial value to 1
+    initialValue: Float = 1f,
+    strokeWidth: Dp = 5.dp
+) {
+    // create variable for
+    // size of the composable
+    var size by remember {
+        mutableStateOf(IntSize.Zero)
+    }
+    // create variable for value
+    var value by remember {
+        mutableStateOf(initialValue)
+    }
+    // create variable for current time
+    var currentTime by remember {
+        mutableStateOf(totalTime)
+    }
+    // create variable for isTimerRunning
+    var isTimerRunning by remember {
+        mutableStateOf(false)
+    }
+    LaunchedEffect(key1 = currentTime, key2 = isTimerRunning) {
+        if (currentTime > 0 && isTimerRunning) {
+            delay(100L)
+            currentTime -= 100L
+            value = currentTime / totalTime.toFloat()
+        }
+    }
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = modifier
+            .onSizeChanged {
+                size = it
+            }
     ) {
-        // create variable for
-        // size of the composable
-        var size by remember {
-            mutableStateOf(IntSize.Zero)
-        }
-        // create variable for value
-        var value by remember {
-            mutableStateOf(initialValue)
-        }
-        // create variable for current time
-        var currentTime by remember {
-            mutableStateOf(totalTime)
-        }
-        // create variable for isTimerRunning
-        var isTimerRunning by remember {
-            mutableStateOf(false)
-        }
-        LaunchedEffect(key1 = currentTime, key2 = isTimerRunning) {
-            if (currentTime > 0 && isTimerRunning) {
-                delay(100L)
-                currentTime -= 100L
-                value = currentTime / totalTime.toFloat()
-            }
-        }
-        Box(
-            contentAlignment = Alignment.Center,
-            modifier = modifier
-                .onSizeChanged {
-                    size = it
-                }
-        ) {
-            // draw the timer
-            Canvas(modifier = modifier) {
-                // draw the inactive arc with following parameters
-                drawArc(
-                    color = inactiveBarColor, // assign the color
-                    startAngle = -215f, // assign the start angle
-                    sweepAngle = 250f, // arc angles
-                    useCenter = false, // prevents our arc to connect at te ends
-                    size = Size(size.width.toFloat(), size.height.toFloat()),
+        // draw the timer
+        Canvas(modifier = modifier) {
+            // draw the inactive arc with following parameters
+            drawArc(
+                color = inactiveBarColor, // assign the color
+                startAngle = -215f, // assign the start angle
+                sweepAngle = 250f, // arc angles
+                useCenter = false, // prevents our arc to connect at te ends
+                size = Size(size.width.toFloat(), size.height.toFloat()),
 
-                    // to make ends of arc round
-                    style = Stroke(strokeWidth.toPx(), cap = StrokeCap.Round)
-                )
-                // draw the active arc with following parameters
-                drawArc(
-                    color = activeBarColor, // assign the color
-                    startAngle = -215f,  // assign the start angle
-                    sweepAngle = 250f * value, // reduce the sweep angle
-                    // with the current value
-                    useCenter = false, // prevents our arc to connect at te ends
-                    size = Size(size.width.toFloat(), size.height.toFloat()),
-
-                    // to make ends of arc round
-                    style = Stroke(strokeWidth.toPx(), cap = StrokeCap.Round)
-                )
-                // calculate the value from arc pointer position
-                val center = Offset(size.width / 2f, size.height / 2f)
-                val beta = (250f * value + 145f) * (PI / 180f).toFloat()
-                val r = size.width / 2f
-                val a = cos(beta) * r
-                val b = sin(beta) * r
-                // draw the circular pointer/ cap
-                drawPoints(
-                    listOf(Offset(center.x + a, center.y + b)),
-                    pointMode = PointMode.Points,
-                    color = handleColor,
-                    strokeWidth = (strokeWidth * 3f).toPx(),
-                    cap = StrokeCap.Round  // make the pointer round
-                )
-            }
-            // add value of the timer
-            Text(
-                text = (currentTime / 1000L).toString(),
-                fontSize = 44.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.White
+                // to make ends of arc round
+                style = Stroke(strokeWidth.toPx(), cap = StrokeCap.Round)
             )
-            // create button to start or stop the timer
-            Button(
-                onClick = {
-                    if (currentTime <= 0L) {
-                        currentTime = totalTime
-                        isTimerRunning = true
-                    } else {
-                        isTimerRunning = !isTimerRunning
-                    }
-                },
-                modifier = Modifier.align(Alignment.BottomCenter),
-                // change button color
-                colors =
-                ButtonDefaults.buttonColors(
-                    if (!isTimerRunning || currentTime <= 0L) {
-                        Color.Green
-                    } else {
-                        Color.Red
-                    }
-                )
+            // draw the active arc with following parameters
+            drawArc(
+                color = activeBarColor, // assign the color
+                startAngle = -215f,  // assign the start angle
+                sweepAngle = 250f * value, // reduce the sweep angle
+                // with the current value
+                useCenter = false, // prevents our arc to connect at te ends
+                size = Size(size.width.toFloat(), size.height.toFloat()),
 
-            ) {
-                Text(
-                    // change the text of button based on values
-                    text = if (isTimerRunning && currentTime >= 0L) "Stop"
-                    else if (!isTimerRunning && currentTime >= 0L) "Start"
-                    else "Restart"
-                )
-            }
+                // to make ends of arc round
+                style = Stroke(strokeWidth.toPx(), cap = StrokeCap.Round)
+            )
+            // calculate the value from arc pointer position
+            val center = Offset(size.width / 2f, size.height / 2f)
+            val beta = (250f * value + 145f) * (PI / 180f).toFloat()
+            val r = size.width / 2f
+            val a = cos(beta) * r
+            val b = sin(beta) * r
+            // draw the circular pointer/ cap
+            drawPoints(
+                listOf(Offset(center.x + a, center.y + b)),
+                pointMode = PointMode.Points,
+                color = handleColor,
+                strokeWidth = (strokeWidth * 3f).toPx(),
+                cap = StrokeCap.Round  // make the pointer round
+            )
+        }
+        // add value of the timer
+        Text(
+            text = (currentTime / 1000L).toString(),
+            fontSize = 44.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color.White
+        )
+        // create button to start or stop the timer
+        Button(
+            onClick = {
+                if (currentTime <= 0L) {
+                    currentTime = totalTime
+                    isTimerRunning = true
+                } else {
+                    isTimerRunning = !isTimerRunning
+                }
+            },
+            modifier = Modifier.align(Alignment.BottomCenter),
+            // change button color
+            colors =
+            ButtonDefaults.buttonColors(
+                if (!isTimerRunning || currentTime <= 0L) {
+                    Color.Green
+                } else {
+                    Color.Red
+                }
+            )
+
+        ) {
+            Text(
+                // change the text of button based on values
+                text = if (isTimerRunning && currentTime >= 0L) "Stop"
+                else if (!isTimerRunning && currentTime >= 0L) "Start"
+                else "Restart"
+            )
         }
     }
+}
 
 
-    class AmbientLight(context: Context) {
-        private val sensorManager: SensorManager =
-            context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
-        private val ambientLight: Sensor? = sensorManager.getDefaultSensor(Sensor.TYPE_LIGHT)
+class AmbientLight(context: Context) {
+    private val sensorManager: SensorManager =
+        context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
+    private val ambientLight: Sensor? = sensorManager.getDefaultSensor(Sensor.TYPE_LIGHT)
 
-        private val _ambientLightData = MutableStateFlow(0f)
-        val ambientLightData: MutableStateFlow<Float> = _ambientLightData
+    private val _ambientLightData = MutableStateFlow(0f)
+    val ambientLightData: MutableStateFlow<Float> = _ambientLightData
 
-        private var lastLightValue: Float = 0f // Store the previous light value
-
-
-        private val sensorEventListener = object : SensorEventListener {
-            override fun onSensorChanged(event: SensorEvent?) {
-                event?.let {
-                    val currentLightValue = it.values[0]
-
-                    // Calculate the change in light
-                    val changeValLx = kotlin.math.abs(currentLightValue - lastLightValue)
-
-                    // Update StateFlow
-                    _ambientLightData.value = currentLightValue
-                    lastLightValue = currentLightValue
+    private var lastLightValue: Float = 0f // Store the previous light value
 
 
+    private val sensorEventListener = object : SensorEventListener {
+        override fun onSensorChanged(event: SensorEvent?) {
+            event?.let {
+                val currentLightValue = it.values[0]
+
+                // Calculate the change in light
+                val changeValLx = kotlin.math.abs(currentLightValue - lastLightValue)
+
+                // Update StateFlow
+                _ambientLightData.value = currentLightValue
+                lastLightValue = currentLightValue
 
 
-                    if (changeValLx > 5000) {
-                        stopListening()
-                        println("Large light intensity change detected: $changeValLx lx. Stopping listener.")
-                    }
+
+
+                if (changeValLx > 5000) {
+                    stopListening()
+                    println("Large light intensity change detected: $changeValLx lx. Stopping listener.")
                 }
             }
-
-            override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
-                // Handle accuracy changes if needed
-            }
         }
 
-        fun startListening() {
-
-            ambientLight?.let {
-                sensorManager.registerListener(
-                    sensorEventListener,
-                    it,
-                    SensorManager.SENSOR_DELAY_NORMAL
-                )
-            }
+        override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
+            // Handle accuracy changes if needed
         }
-
-        fun stopListening() {
-            sensorManager.unregisterListener(sensorEventListener)
-            println("Sensor listener unregistered.")
-        }
-
     }
 
-    // for shake motion
-    class Accelerometer(context: Context) {
-        private val sensorManager: SensorManager =
-            context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
-        private val accelerometer: Sensor? =
-            sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+    fun startListening() {
 
-        // StateFlow to expose accelerometer data
-        private val _accelerometerData = MutableStateFlow(Triple(0f, 0f, 0f))
-        val accelerometerData: StateFlow<Triple<Float, Float, Float>> = _accelerometerData
+        ambientLight?.let {
+            sensorManager.registerListener(
+                sensorEventListener,
+                it,
+                SensorManager.SENSOR_DELAY_NORMAL
+            )
+        }
+    }
 
-        private var onMotionStopped: (() -> Unit)? = null
+    fun stopListening() {
+        sensorManager.unregisterListener(sensorEventListener)
+        println("Sensor listener unregistered.")
+    }
 
-        private val sensorEventListener = object : SensorEventListener {
-            override fun onSensorChanged(event: SensorEvent?) {
-                event?.let {
-                    val x = it.values[0]
-                    val y = it.values[1]
-                    val z = it.values[2]
+}
 
-                    // Update StateFlow
-                    _accelerometerData.value = Triple(x, y, z)
+// for shake motion
+class Accelerometer(context: Context) {
+    private val sensorManager: SensorManager =
+        context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
+    private val accelerometer: Sensor? =
+        sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
 
-                    // Compute acceleration magnitude
-                    val magnitude = sqrt(x * x + y * y + z * z)
+    // StateFlow to expose accelerometer data
+    private val _accelerometerData = MutableStateFlow(Triple(0f, 0f, 0f))
+    val accelerometerData: StateFlow<Triple<Float, Float, Float>> = _accelerometerData
 
-                    // Stop listening if the magnitude exceeds a threshold (e.g., 15 m/s²)
-                    if (magnitude > 15) {
-                        stopListening()
-                        println("Big acceleration detected! Stopping sensor listening.")
-                    }
+    private var onMotionStopped: (() -> Unit)? = null
+
+    private val sensorEventListener = object : SensorEventListener {
+        override fun onSensorChanged(event: SensorEvent?) {
+            event?.let {
+                val x = it.values[0]
+                val y = it.values[1]
+                val z = it.values[2]
+
+                // Update StateFlow
+                _accelerometerData.value = Triple(x, y, z)
+
+                // Compute acceleration magnitude
+                val magnitude = sqrt(x * x + y * y + z * z)
+
+                // Stop listening if the magnitude exceeds a threshold (e.g., 15 m/s²)
+                if (magnitude > 15) {
+                    stopListening()
+                    println("Big acceleration detected! Stopping sensor listening.")
                 }
             }
-
-            override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
-                // Handle accuracy changes if needed
-            }
         }
 
-        fun startListening(onMotionStoppedCallback: () -> Unit) {
-            onMotionStopped = onMotionStoppedCallback
-            accelerometer?.let {
-                sensorManager.registerListener(
-                    sensorEventListener,
-                    it,
-                    SensorManager.SENSOR_DELAY_NORMAL
-                )
-            }
-        }
-
-        fun stopListening() {
-            sensorManager.unregisterListener(sensorEventListener)
-            onMotionStopped?.invoke() // Invoke the callback when stopping
-            println("Sensor listener unregistered.")
+        override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
+            // Handle accuracy changes if needed
         }
     }
 
+    fun startListening(onMotionStoppedCallback: () -> Unit) {
+        onMotionStopped = onMotionStoppedCallback
+        accelerometer?.let {
+            sensorManager.registerListener(
+                sensorEventListener,
+                it,
+                SensorManager.SENSOR_DELAY_NORMAL
+            )
+        }
+    }
 
-    class spiritLevel(context: Context) {
-        private val sensorManager: SensorManager =
-            context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
-        private val accelerometer: Sensor? =
-            sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+    fun stopListening() {
+        sensorManager.unregisterListener(sensorEventListener)
+        onMotionStopped?.invoke() // Invoke the callback when stopping
+        println("Sensor listener unregistered.")
+    }
+}
 
-        // StateFlow to expose accelerometer data
-        private val _accelerometerData = MutableStateFlow(Triple(0f, 0f, 0f))
-        val accelerometerData: StateFlow<Triple<Float, Float, Float>> = _accelerometerData
 
-        private var onMotionStopped: (() -> Unit)? = null
+class spiritLevel(context: Context) {
+    private val sensorManager: SensorManager =
+        context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
+    private val accelerometer: Sensor? =
+        sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
 
-        private val sensorEventListener = object : SensorEventListener {
-            override fun onSensorChanged(event: SensorEvent?) {
-                event?.let {
-                    val x = it.values[0]
-                    val y = it.values[1]
-                    val z = it.values[2]
+    // StateFlow to expose accelerometer data
+    private val _accelerometerData = MutableStateFlow(Triple(0f, 0f, 0f))
+    val accelerometerData: StateFlow<Triple<Float, Float, Float>> = _accelerometerData
 
-                    // Update StateFlow
-                    _accelerometerData.value = Triple(x, y, z)
+    private var onMotionStopped: (() -> Unit)? = null
 
-                    // Compute acceleration magnitude
+    private val sensorEventListener = object : SensorEventListener {
+        override fun onSensorChanged(event: SensorEvent?) {
+            event?.let {
+                val x = it.values[0]
+                val y = it.values[1]
+                val z = it.values[2]
+
+                // Update StateFlow
+                _accelerometerData.value = Triple(x, y, z)
+
+                // Compute acceleration magnitude
 //                val magnitude = sqrt(x * x + y * y + z * z)
 
-                    // Stop listening if x and y are 0.0, which is would be having the device place on flat surface
-                    if ("%.2f".format(x).toFloat() > -0.9 && "%.2f".format(x).toFloat() < 0.9
-                        && "%.2f".format(y).toFloat() > -0.9 && "%.2f".format(y).toFloat() < 0.9
-                    ) {
-                        stopListening()
-                        println("Big acceleration detected! Stopping sensor listening.")
-                    }
+                // Stop listening if x and y are 0.0, which is would be having the device place on flat surface
+                if ("%.2f".format(x).toFloat() > -0.9 && "%.2f".format(x).toFloat() < 0.9
+                    && "%.2f".format(y).toFloat() > -0.9 && "%.2f".format(y).toFloat() < 0.9
+                ) {
+                    stopListening()
+                    println("Big acceleration detected! Stopping sensor listening.")
                 }
             }
-
-            override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
-                // Handle accuracy changes if needed
-            }
         }
 
-        fun startListening(onMotionStoppedCallback: () -> Unit) {
-            onMotionStopped = onMotionStoppedCallback
-            accelerometer?.let {
-                sensorManager.registerListener(
-                    sensorEventListener,
-                    it,
-                    SensorManager.SENSOR_DELAY_NORMAL
-                )
-            }
-        }
-
-        fun stopListening() {
-            sensorManager.unregisterListener(sensorEventListener)
-            onMotionStopped?.invoke() // Invoke the callback when stopping
-            println("Sensor listener unregistered.")
+        override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
+            // Handle accuracy changes if needed
         }
     }
 
-    @Composable
-    fun spiritLevelScreen() {
-        val context = LocalContext.current
-        val spiritDetector = remember { spiritLevel(context) }
-
-        val accelerometerData by spiritDetector.accelerometerData.collectAsState()
-
-        var motionDone by remember { mutableStateOf(false) }
-        DisposableEffect(Unit) {
-            spiritDetector.startListening {
-                motionDone = true
-            }
-            onDispose {
-                spiritDetector.stopListening()
-            }
-        }
-
-        Column {
-            Text(text = "X: ${accelerometerData.first}")
-            Text(text = "Y: ${accelerometerData.second}")
-            Text(text = "Z: ${accelerometerData.third}")
-            Text(text = "MotionDone: $motionDone")
+    fun startListening(onMotionStoppedCallback: () -> Unit) {
+        onMotionStopped = onMotionStoppedCallback
+        accelerometer?.let {
+            sensorManager.registerListener(
+                sensorEventListener,
+                it,
+                SensorManager.SENSOR_DELAY_NORMAL
+            )
         }
     }
 
-    class PhoneOrientation(context: Context) : SensorEventListener {
-        private val sensorManager =
-            context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
-        private val rotationSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)
+    fun stopListening() {
+        sensorManager.unregisterListener(sensorEventListener)
+        onMotionStopped?.invoke() // Invoke the callback when stopping
+        println("Sensor listener unregistered.")
+    }
+}
 
-        private val _pitch = MutableStateFlow(0f)   // pitch in degrees
-        val pitch: StateFlow<Float> get() = _pitch
+@Composable
+fun spiritLevelScreen() {
+    val context = LocalContext.current
+    val spiritDetector = remember { spiritLevel(context) }
 
-        fun startListening() {
-            rotationSensor?.let {
-                sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_GAME)
-            }
+    val accelerometerData by spiritDetector.accelerometerData.collectAsState()
+
+    var motionDone by remember { mutableStateOf(false) }
+    DisposableEffect(Unit) {
+        spiritDetector.startListening {
+            motionDone = true
         }
-
-        fun stopListening() {
-            sensorManager.unregisterListener(this)
+        onDispose {
+            spiritDetector.stopListening()
         }
-
-        override fun onSensorChanged(event: SensorEvent) {
-            if (event.sensor.type == Sensor.TYPE_ROTATION_VECTOR) {
-                // Convert rotation-vector to a 4x4 matrix
-                val rotationMatrix = FloatArray(9)
-                SensorManager.getRotationMatrixFromVector(rotationMatrix, event.values)
-
-                // Compute orientation angles: [azimuth (Z), pitch (X), roll (Y)]
-                val orientationAngles = FloatArray(3)
-                SensorManager.getOrientation(rotationMatrix, orientationAngles)
-
-                // orientationAngles[1] = pitch in radians
-                val pitchDegrees = Math.toDegrees(orientationAngles[1].toDouble()).toFloat()
-                _pitch.value = pitchDegrees
-            }
-        }
-
-        override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) = Unit
     }
 
+    Column {
+        Text(text = "X: ${accelerometerData.first}")
+        Text(text = "Y: ${accelerometerData.second}")
+        Text(text = "Z: ${accelerometerData.third}")
+        Text(text = "MotionDone: $motionDone")
+    }
+}
 
-    @Composable
-    fun LightScreen() {
-        val context = LocalContext.current
-        val lightDetector = remember { AmbientLight(context) }
-        val lightData by lightDetector.ambientLightData.collectAsState()
+class PhoneOrientation(context: Context) : SensorEventListener {
+    private val sensorManager =
+        context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
+    private val rotationSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)
 
-        DisposableEffect(Unit) {
-            lightDetector.startListening()
-            onDispose {
-                lightDetector.stopListening()
-            }
-        }
-        Column {
-            Text(text = "light lx $lightData")
+    private val _pitch = MutableStateFlow(0f)   // pitch in degrees
+    val pitch: StateFlow<Float> get() = _pitch
+
+    fun startListening() {
+        rotationSensor?.let {
+            sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_GAME)
         }
     }
+
+    fun stopListening() {
+        sensorManager.unregisterListener(this)
+    }
+
+    override fun onSensorChanged(event: SensorEvent) {
+        if (event.sensor.type == Sensor.TYPE_ROTATION_VECTOR) {
+            // Convert rotation-vector to a 4x4 matrix
+            val rotationMatrix = FloatArray(9)
+            SensorManager.getRotationMatrixFromVector(rotationMatrix, event.values)
+
+            // Compute orientation angles: [azimuth (Z), pitch (X), roll (Y)]
+            val orientationAngles = FloatArray(3)
+            SensorManager.getOrientation(rotationMatrix, orientationAngles)
+
+            // orientationAngles[1] = pitch in radians
+            val pitchDegrees = Math.toDegrees(orientationAngles[1].toDouble()).toFloat()
+            _pitch.value = pitchDegrees
+        }
+    }
+
+    override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) = Unit
+}
+
+
+@Composable
+fun LightScreen() {
+    val context = LocalContext.current
+    val lightDetector = remember { AmbientLight(context) }
+    val lightData by lightDetector.ambientLightData.collectAsState()
+
+    DisposableEffect(Unit) {
+        lightDetector.startListening()
+        onDispose {
+            lightDetector.stopListening()
+        }
+    }
+    Column {
+        Text(text = "light lx $lightData")
+    }
+}

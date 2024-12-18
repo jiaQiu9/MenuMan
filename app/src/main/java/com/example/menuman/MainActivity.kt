@@ -142,6 +142,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+
     private fun signUpWithEmail(email: String, password: String, callback: (String) -> Unit) {
         auth.createUserWithEmailAndPassword(email, password)
             .addOnCompleteListener(this) { task ->
@@ -168,7 +169,8 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun SignupScreen(
     onSignupSuccess: () -> Unit,
-    signUpUser: (String, String, (String) -> Unit) -> Unit
+    signUpUser: (String, String, (String) -> Unit) -> Unit,
+    onBackClick: () -> Unit
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -198,6 +200,9 @@ fun SignupScreen(
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(modifier = Modifier.height(16.dp))
+        Button(onClick = { onBackClick() }) {
+            Text("Back")
+        }
 
         Button(
             onClick = {
@@ -232,7 +237,7 @@ fun SignupScreen(
 @Composable
 fun LoginScreen(
     onLoginSuccess: () -> Unit,
-    loginUser: (String, String, (String) -> Unit) -> Unit
+    loginUser: (String, String, (String) -> Unit) -> Unit,  onBackClick: () -> Unit
 ) {
     var email by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
@@ -262,6 +267,9 @@ fun LoginScreen(
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(modifier = Modifier.height(16.dp))
+        Button(onClick = { onBackClick() }) {
+            Text("Back")
+        }
 
         Button(
             onClick = {
@@ -382,7 +390,9 @@ fun MainScreen(
                     Text("Login")
                 }
                 Spacer(modifier = Modifier.height(16.dp))
-                Button(onClick = { navController.navigate("signupScreen") }) {
+                Button(onClick = {
+                    navController.navigate("signupScreen")
+                }) {
                     Text("Sign Up")
                 }
             }
@@ -390,13 +400,15 @@ fun MainScreen(
         composable("loginScreen") {
             LoginScreen(
                 onLoginSuccess = { navController.navigate("introScreen") },
-                loginUser = loginUser
+                loginUser = loginUser,
+                onBackClick = { navController.popBackStack() }
             )
         }
         composable("signupScreen") {
             SignupScreen(
                 onSignupSuccess = { navController.navigate("loginScreen") },
-                signUpUser = signUpUser
+                signUpUser = signUpUser,
+                onBackClick = { navController.popBackStack() }
             )
         }
         composable("recipeScreen") {

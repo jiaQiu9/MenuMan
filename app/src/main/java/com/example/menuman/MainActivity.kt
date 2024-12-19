@@ -274,7 +274,7 @@ fun QuoteScreen(navController: NavController, quoteViewModel: QuoteViewModel) {
     val quote = quoteViewModel.quote.value // Get the latest quote value
     val name = quoteViewModel.name.value
     val category = quoteViewModel.category.value
-    val gradientColors = listOf(Color(0xFF15f4ee), Blue, Magenta /*...*/)
+    val gradientColors = listOf(Color(0xFF15f4ee), Blue, Magenta)
     val context = LocalContext.current
     val isConnected by remember {
         connectivityFlow(context)
@@ -361,13 +361,17 @@ fun MainScreen(
                 Button(onClick = { navController.navigate("signupScreen") }) {
                     Text("Sign Up")
                 }
+
             }
         }
         composable("loginScreen") {
             LoginScreen(
                 onLoginSuccess = { navController.navigate("introScreen") },
-                loginUser = loginUser
+                loginUser = loginUser,
             )
+            Button(onClick = { navController.navigate("homeScreen") }) {
+                Text("Back")
+            }
         }
         composable("signupScreen") {
             SignupScreen(
@@ -402,13 +406,13 @@ fun RecipeScreen(
         Box(modifier = Modifier.weight(5f)) {
             LazyColumn {
                 item {
-                    //RecipeTitle(title=title)
+                    //RecipeTitle
                     Text(title)
                 }
                 item {
                     Spacer(modifier = Modifier.height(10.dp))
                 }
-                //RecipeInstructions(instructions=instructions)
+                //RecipeInstructions
                 item {
                     Text(instructions)
                 }

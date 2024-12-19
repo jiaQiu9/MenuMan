@@ -8,14 +8,10 @@ import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.net.ConnectivityManager
 import android.net.Network
-import android.net.NetworkCapabilities
 import android.net.NetworkRequest
-import android.os.Build
 import android.os.Bundle
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.animation.core.animateIntOffsetAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
@@ -23,9 +19,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -34,7 +27,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PointMode
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.onSizeChanged
@@ -46,7 +38,6 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.menuman.ui.theme.MenuManTheme
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.delay
 import kotlin.math.PI
@@ -61,23 +52,17 @@ import androidx.compose.ui.graphics.Shape
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-
 import androidx.activity.viewModels
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
-
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color.Companion.Black
@@ -90,7 +75,6 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.TextStyle
-
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.TextUnit
 import androidx.navigation.NavController
@@ -101,17 +85,6 @@ import kotlinx.coroutines.flow.callbackFlow
 import kotlin.math.roundToInt
 import kotlin.math.sqrt
 import kotlin.random.Random
-
-
-object AppColors {
-    val Primary = Color(0xFF1E88E5)
-    val Secondary = Color(0xFFF4511E)
-    val Background = Color(0xFFF5F5F5)
-    val TextPrimary = Color.Black
-    val TextSecondary = Color.DarkGray
-    val ButtonBackground = Color(0xFF1976D2)
-    val ButtonText = Color.White
-}
 
 class MainActivity : ComponentActivity() {
     private lateinit var auth: FirebaseAuth
@@ -142,7 +115,6 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-
     private fun signUpWithEmail(email: String, password: String, callback: (String) -> Unit) {
         auth.createUserWithEmailAndPassword(email, password)
             .addOnCompleteListener(this) { task ->
@@ -169,8 +141,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun SignupScreen(
     onSignupSuccess: () -> Unit,
-    signUpUser: (String, String, (String) -> Unit) -> Unit,
-    onBackClick: () -> Unit
+    signUpUser: (String, String, (String) -> Unit) -> Unit
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -200,9 +171,6 @@ fun SignupScreen(
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(modifier = Modifier.height(16.dp))
-        Button(onClick = { onBackClick() }) {
-            Text("Back")
-        }
 
         Button(
             onClick = {
@@ -237,7 +205,7 @@ fun SignupScreen(
 @Composable
 fun LoginScreen(
     onLoginSuccess: () -> Unit,
-    loginUser: (String, String, (String) -> Unit) -> Unit,  onBackClick: () -> Unit
+    loginUser: (String, String, (String) -> Unit) -> Unit
 ) {
     var email by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
@@ -267,9 +235,6 @@ fun LoginScreen(
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(modifier = Modifier.height(16.dp))
-        Button(onClick = { onBackClick() }) {
-            Text("Back")
-        }
 
         Button(
             onClick = {
@@ -384,15 +349,16 @@ fun MainScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
+                Text("Menu Man",
+                    fontSize = 50.sp)
+                Spacer(modifier = Modifier.height(30.dp))
                 Button(onClick = {
                     navController.navigate("loginScreen")
                 }) {
                     Text("Login")
                 }
                 Spacer(modifier = Modifier.height(16.dp))
-                Button(onClick = {
-                    navController.navigate("signupScreen")
-                }) {
+                Button(onClick = { navController.navigate("signupScreen") }) {
                     Text("Sign Up")
                 }
             }
@@ -400,15 +366,13 @@ fun MainScreen(
         composable("loginScreen") {
             LoginScreen(
                 onLoginSuccess = { navController.navigate("introScreen") },
-                loginUser = loginUser,
-                onBackClick = { navController.popBackStack() }
+                loginUser = loginUser
             )
         }
         composable("signupScreen") {
             SignupScreen(
                 onSignupSuccess = { navController.navigate("loginScreen") },
-                signUpUser = signUpUser,
-                onBackClick = { navController.popBackStack() }
+                signUpUser = signUpUser
             )
         }
         composable("recipeScreen") {

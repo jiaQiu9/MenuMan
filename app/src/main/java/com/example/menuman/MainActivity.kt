@@ -443,8 +443,8 @@ fun RecipeScreen(
                 Box(
                     modifier = Modifier
                         .weight(1f) // Each Box fills half the row width
-                        .fillMaxHeight() // Fills the Row height
-                        .background(Color.White) // Example color
+                        .fillMaxHeight()
+                        .background(Color.White)
                         .border(BorderStroke(2.dp, Color.Black))
                         .clickable { navController.navigate("gameScreen") },
                     contentAlignment = Alignment.Center
@@ -456,8 +456,8 @@ fun RecipeScreen(
                 Box(
                     modifier = Modifier
                         .weight(1f) // Each Box fills half the row width
-                        .fillMaxHeight() // Fills the Row height
-                        .background(Color.LightGray) // Example color
+                        .fillMaxHeight()
+                        .background(Color.LightGray)
                         .border(BorderStroke(2.dp, Color.Black))
                         .clickable { navController.navigate("recipeScreen") },
 
@@ -519,9 +519,9 @@ fun IntroScreen(navController: NavController) {
     // Current index in the slideshow
     var currentIndex by remember { mutableStateOf(0) }
 
-    val specialIndex = 9  // zero-based: this is the second image in the list
+    val specialIndex = 9  // zero-based: this is the 10th image in the list
 
-    // Simple handler that goes to the next image (wraps around at the end)
+    // Goes to the next image (wraps around at the end)
     fun showNextImage() {
         if (currentIndex < 11) {
             currentIndex = (currentIndex + 1)
@@ -534,7 +534,6 @@ fun IntroScreen(navController: NavController) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            // If you still want to advance images on click, keep this
             .clickable {
                 if (currentIndex != 9 && currentIndex != 11) {
                     showNextImage()
@@ -557,7 +556,6 @@ fun IntroScreen(navController: NavController) {
             SpecialOverlays(
                 onBothOverlaysFinished = {
                     // Called when both overlays have faded out.
-                    // Optionally advance to next image automatically:
                     showNextImage()
                 }
             )
@@ -592,7 +590,6 @@ fun SpecialOverlays(onBothOverlaysFinished: () -> Unit) {
             // Fade out over 1 second
             exit = fadeOut(animationSpec = tween(durationMillis = 1000))
         ) {
-            // Put the Image in a Box scope so .align works
             Box(modifier = Modifier.fillMaxSize()) {
                 Image(
                     painter = painterResource(R.drawable.winbutton),
@@ -637,8 +634,7 @@ fun SpecialOverlays(onBothOverlaysFinished: () -> Unit) {
     LaunchedEffect(bottomOverlayVisible, topOverlayVisible) {
         if (!bottomOverlayVisible && !topOverlayVisible) {
             delay(1000)
-            // The composable is still in the composition at this moment,
-            // so the exit transitions have run. Now call the callback.
+            //composable still visible, so wait until the animations finished
             onBothOverlaysFinished()
         }
     }
@@ -689,10 +685,9 @@ fun GameScreen(navController: NavController) {
     }.collectAsState(initial = false)
 
 
-    // Create your orientation detector once
     val orientation2 = remember { PhoneOrientation(context) }
 
-    // Start and stop listening in a lifecycle-aware manner
+    // Start and stop listening
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
         orientation2.startListening()
@@ -701,13 +696,13 @@ fun GameScreen(navController: NavController) {
         }
     }
 
-    // Collect the pitch angle from StateFlow
+    // Get pitch angle from StateFlow
     val pitchDegrees by orientation2.pitch.collectAsState()
 
     Column(modifier = Modifier.fillMaxSize()) {
 
-        // 1) Top 1/5th (outlined box)
-        // Using 'weight(1f)' for top box and 'weight(4f)' for the bottom region
+        // 1) Top 1/5.5th (outlined box)
+        // Using weight(1f) for top box and weight(4f) for the bottom region
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -760,7 +755,7 @@ fun GameScreen(navController: NavController) {
                             // Capture drag gestures and update offsets
                             .pointerInput(Unit) {
                                 detectDragGestures { change, dragAmount ->
-                                    // consume the touch event so it doesn't propagate
+                                    // consume the touch event so it doesn't continue
                                     change.consume()
                                     // Update offsets
                                     offsetX += dragAmount.x
@@ -769,7 +764,6 @@ fun GameScreen(navController: NavController) {
                             }
                     )
                 }
-                // OutlinedGameButton in the center
                 Text(
                     text = hintText,
                     color = Black,
@@ -781,11 +775,11 @@ fun GameScreen(navController: NavController) {
         }
 
 
-        // 2) Bottom 4/5ths (no outline)
+        // 2) Bottom 4/5.5ths
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(4f) // bottom is 4 parts out of total 5
+                .weight(4f) // bottom is 4 parts out of total 5.5
         ) {
             Box(
                 modifier = Modifier
@@ -907,12 +901,11 @@ fun GameScreen(navController: NavController) {
                     .fillMaxWidth()
                     .height(100.dp) // Set a fixed height for the row to ensure rectangles
             ) {
-                // Button 1
                 Box(
                     modifier = Modifier
                         .weight(1f) // Each Box fills half the row width
-                        .fillMaxHeight() // Fills the Row height
-                        .background(Color.LightGray) // Example color
+                        .fillMaxHeight()
+                        .background(Color.LightGray)
                         .border(BorderStroke(2.dp, Color.Black))
                         .clickable { navController.navigate("gameScreen") },
                     contentAlignment = Alignment.Center
@@ -920,12 +913,11 @@ fun GameScreen(navController: NavController) {
                     Text(text = "Main Menus", color = Color.Black)
                 }
 
-                // Button 2
                 Box(
                     modifier = Modifier
                         .weight(1f) // Each Box fills half the row width
-                        .fillMaxHeight() // Fills the Row height
-                        .background(Color.White) // Example color
+                        .fillMaxHeight()
+                        .background(Color.White)
                         .border(BorderStroke(2.dp, Color.Black))
                         .clickable { navController.navigate("recipeScreen") },
 
@@ -945,13 +937,12 @@ fun FilledGameButton(
     onClicked: () -> Unit,
     // Pass in the currentRound condition
     currentRound: Int,
-    // Optional image overlay
     onCurrentRoundChanged: (Int) -> Unit,
     imagePainter: Painter? = null,
     columnIndex: Int,
     rowIndex: Int,
     modifier: Modifier = Modifier,
-    defaultBackgroundColor: Color = Color.LightGray,      // e.g., a neutral default
+    defaultBackgroundColor: Color = Color.LightGray,
     borderColor: Color = Color.Transparent,
     borderWidth: Dp = 0.dp,
     shape: Shape = RoundedCornerShape(12.dp),
@@ -1033,8 +1024,6 @@ fun FilledGameButton(
     }
 }
 
-
-// Example of a function that returns an outlined button
 @Composable
 fun OutlinedGameButton(
     text: String,
@@ -1044,7 +1033,7 @@ fun OutlinedGameButton(
     clickedBackgroundColor: Color = Color.Red,
     borderColor: Color = Blue,
     borderWidth: Dp = 2.dp,
-    fontSize: TextUnit = 14.sp // Add a font size parameter
+    fontSize: TextUnit = 14.sp
 ) {
     // State to track whether the button is clicked
     var isClicked by remember { mutableStateOf(false) }
@@ -1077,7 +1066,7 @@ fun OutlinedGameButton(
         Text(
             text = text,
             modifier = Modifier.align(Alignment.Center),
-            fontSize = fontSize, // Use the smaller font size
+            fontSize = fontSize,
             color = Color.Black
         )
     }
